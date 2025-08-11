@@ -448,7 +448,7 @@ def main():
             if technique == "banner_grab":
                 module_result = banner_grab(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, insecure_tls=args.insecure_tls)
             elif technique == "os_detection":
-                os_detection_plus(args.target, ports, args.timeout)
+                module_result = os_detection_plus(args.target, ports, args.timeout)
             elif technique == "http_headers":
                 http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal)
             #elif technique == "os_detection_plus":

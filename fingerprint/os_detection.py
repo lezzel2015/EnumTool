@@ -1,6 +1,6 @@
 # fingerprint/os_detection.py
 # Versión mejorada añadiendo banner grabbing
-
+from EnumTool import result
 from scan.tcp_connect import tcp_connect
 from fingerprint.banner_grab import grab_banner
 from scapy.all import IP, TCP, sr1
@@ -113,6 +113,8 @@ def os_detection_plus(target, ports, timeout):
     print(f"{Fore.CYAN}[*] Escaneando puertos abiertos en hosts objetivo...{Style.RESET_ALL}")
     scan_results = tcp_connect(target, ports, timeout, threads=5, minimal_output=True, verbose=False)
 
+    # Variable para devolver resultados a main
+    results = {}
     for ip_addr, port_results in scan_results.items():
         # Ordenar puertos abiertos:
         open_ports = sorted([p for p, res in port_results.items() if res.get("status") == "OPEN"])
@@ -181,8 +183,6 @@ def os_detection_plus(target, ports, timeout):
                 else:
                     linea += f" [{banner}]"
 
-            detalles.append(linea)
-
             # Heurística TTL/ventana
             if meta:
                 ttl, win = meta.get("ttl"), meta.get("win")
@@ -199,6 +199,24 @@ def os_detection_plus(target, ports, timeout):
                 elif win in LINUX_WINS:
                     so_counter["Linux"] = so_counter.get("Linux", 0) + 1
                     evidencias.append(f"WIN={win} típico Linux")
+
+            detalles.append(linea)
+            # Añadir resultados a "results[]" por puerto
+            entry = {}
+            if meta:
+                entry.update({"ttl": meta.get("ttl"), "win": meta.get("win"), "opts": meta.get("opts")})
+            if so:
+                entry.update({"os_hint": so, "confidence": confianza})
+            if banner and banner != "Unknown":
+                entry.update({"banner": banner[:120]})
+            # Conservar estado/servicio del connect scan
+            svc = (port_results.get(port) or {}).get("service", "Unknown")
+            st = (port_results.get(port) or {}).get("status", "OPEN")
+            rtt = (port_results.get(port) or {}).get("rtt")
+            entry.update({"status": st, "service": svc})
+            if rtt is not None:
+                entry.update({"rtt": rtt})
+            results[ip_addr][port] = entry
 
         # Probes SMB/RDP
         if 445 in open_ports:
@@ -226,6 +244,9 @@ def os_detection_plus(target, ports, timeout):
                 ev_txt = ", ".join(sorted(set(evidencias)))[:50]
                 print(f"{Fore.WHITE}  Evidencia: {ev_txt}{Style.RESET_ALL}")
 
+            # Resumen por host (clave no numérica para no colisionar con puertos)
+            results[ip_addr]["_host_os"] = {"best": best_so, "score": total, "evidence": sorted(set(evidencias))[:50], "open_ports": open_ports}
+
             # C. Cálculo del desglose por variantes detectadas por banner
             variant_counter = {}
             total_variantes = 0
@@ -243,3 +264,4 @@ def os_detection_plus(target, ports, timeout):
                     porcentaje = (count / total_variantes) * 100
                     print(f"{Fore.YELLOW}    - {variante}: {porcentaje:.0f}%{Style.RESET_ALL}")
                     
+    return results
