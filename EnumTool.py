@@ -38,7 +38,7 @@ from collections import defaultdict
 # Importación desde otros módulos
 from discovery import arp_ping, icmp_ping, tcp_ping, udp_ping
 from scan import tcp_connect, syn_scan, ack_scan
-from fingerprint import banner_grab, os_detection, os_detection_plus, http_headers
+from fingerprint import banner_grab, os_detection_plus, http_headers
 from utils import banner, parse_ports, top_ports, PortParseError
 from utils.top_ports import TOP_1000_TCP_PORTS
 
@@ -80,11 +80,9 @@ ACTION_MAP = {
     "sS": ("scan", "syn_scan"),
     "sA": ("scan", "ack_scan"),
     "B":  ("fingerprint", "banner_grab"),
-    "O":  ("fingerprint", "os_detection"),
-    "V":  ("fingerprint", "os_detection_plus"),
+    "V":  ("fingerprint", "os_detection"),
     "H":  ("fingerprint", "http_headers")
 }
-
 
 # ---------------------------------------------
 def need_root(technique):
@@ -314,7 +312,6 @@ def main():
     action_group.add_argument("-sS", action="store_true", help="Scan syn_scan")
     action_group.add_argument("-sA", action="store_true", help="Scan ack_scan")
     action_group.add_argument("-B",  action="store_true", help="Fingerprint banner grabbing")
-    action_group.add_argument("-O",  action="store_true", help="Fingerprint OS detection")
     action_group.add_argument("-V", action="store_true", help="OS detection with banner grabbing (enhanced fingerprinting)")
     action_group.add_argument("-H", action="store_true", help="Fingerprint http_headers (HTTP/HTTPS headers analysis)")
 
@@ -349,7 +346,7 @@ def main():
             break
 
     if not selected_flag:
-        parser.error("Debes elegir una acción entre -dA, -dI, -dT, -dU, -sT, -sS, -sA, -B, -O, -V, -H")
+        parser.error("Debes elegir una acción entre -dA, -dI, -dT, -dU, -sT, -sS, -sA, -B, -V, -H")
 
     mode, technique = ACTION_MAP[selected_flag]
     #result(f"Acción seleccionada: {mode} -> {technique}")
@@ -408,10 +405,6 @@ def main():
         elif technique in ["arp_ping", "icmp_ping", "os_detection"]:  #técnicas que no necesitan definir un puerto
             ports = None
 
-    # ---------------------------------------------
-    #mode, technique = ACTION_MAP[selected_flag]
-    #result(f"Acción seleccionada: {mode} -> {technique}")
-
     # Validación de root si es necesario
     need_root(technique)
 
@@ -455,11 +448,11 @@ def main():
             if technique == "banner_grab":
                 module_result = banner_grab(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, insecure_tls=args.insecure_tls)
             elif technique == "os_detection":
-                os_detection(args.target, ports, args.timeout)
+                os_detection_plus(args.target, ports, args.timeout)
             elif technique == "http_headers":
                 http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal)
-            elif technique == "os_detection_plus":
-                os_detection_plus(args.target, ports, args.timeout)
+            #elif technique == "os_detection_plus":
+            #    os_detection_plus(args.target, ports, args.timeout)
 
         # ---------------------------------------------
         # Finalizar y mostrar duración
