@@ -114,6 +114,8 @@ def os_detection_plus(target, ports, timeout):
     # Variable para devolver resultados a main
     results = {}
     for ip_addr, port_results in scan_results.items():
+        #añado ip actual a results:
+        results.setdefault(ip_addr, {})
         # Ordenar puertos abiertos:
         open_ports = sorted([p for p, res in port_results.items() if res.get("status") == "OPEN"])
         if not open_ports:
@@ -214,6 +216,8 @@ def os_detection_plus(target, ports, timeout):
             entry.update({"status": st, "service": svc})
             if rtt is not None:
                 entry.update({"rtt": rtt})
+            # Safety: asegura el dict por host antes de asignar el puerto
+            results.setdefault(ip_addr, {})  
             results[ip_addr][port] = entry
 
         # Probes SMB/RDP
