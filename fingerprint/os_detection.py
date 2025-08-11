@@ -1,12 +1,10 @@
 # fingerprint/os_detection.py
 # Versión mejorada añadiendo banner grabbing
-from EnumTool import result
 from scan.tcp_connect import tcp_connect
 from fingerprint.banner_grab import grab_banner
 from scapy.all import IP, TCP, sr1
 import socket
 from colorama import Fore, Style
-from utils import network
 from utils.top_ports import TOP_1000_TCP_PORTS
 
 # Firmas de sistemas operativos (igual que antes)
