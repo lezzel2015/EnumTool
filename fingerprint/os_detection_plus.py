@@ -1,10 +1,9 @@
-# fingerprint/os_detection.py
-# Detección heurística de SO basada en TCP_CONNECT + fingerprint activo solo en puertos abiertos
+# fingerprint/os_detection_plus.py
+# Versión mejorada añadiendo banner grabbing
 
 from scan.tcp_connect import tcp_connect
 from fingerprint.banner_grab import grab_banner
 from scapy.all import IP, TCP, sr1
-import scapy.modules.p0fv2 as p0fv2
 from colorama import Fore, Style
 from utils import network
 from utils.top_ports import TOP_1000_TCP_PORTS
@@ -148,3 +147,4 @@ def os_detection_plus(target, ports, timeout):
                 for variante, count in sorted(variant_counter.items(), key=lambda x: x[1], reverse=True):
                     porcentaje = (count / total_variantes) * 100
                     print(f"{Fore.YELLOW}    - {variante}: {porcentaje:.0f}%{Style.RESET_ALL}")
+                    

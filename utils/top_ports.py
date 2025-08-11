@@ -36,3 +36,5 @@ def get_profile_ports(profile: str):
     Devuelve la lista de puertos asociada a un perfil.
     """
     return PROFILES.get(profile.lower(), [])
+    
+    

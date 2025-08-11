@@ -25,7 +25,7 @@ def expand_targets(target_string):
     Ejemplo de entrada:
       "192.168.56.3,192.168.56.6-192.168.56.9,192.168.1.0/24"
     Salida:
-      ['192.168.56.3', '192.168.56.6', '192.168.56.7', '192.168.56.8', '192.168.56.9', '192.168.56.1.0', '192.168.56.1.1', ...]
+      ['192.168.56.3', '192.168.56.6', '192.168.56.7', '192.168.56.8', '192.168.56.9', '192.168.1.0', '192.168.1.1', ...]
     """
     import ipaddress
     
@@ -55,24 +55,6 @@ def expand_targets(target_string):
                 error(f"Red CIDR no válida: {target}")
                 sys.exit(1)
         elif '-' in target:
-            """
-            # Rango de Ips:
-            start_ip, end_ip = target.split('-')
-            try:
-                start = ipaddress.IPv4Address(start_ip.strip())
-                end = ipaddress.IPv4Address(end_ip.strip())
-                if int(end) < int(start):
-                    raise ValueError
-            except ValueError:
-                error(f"Rango de IPs no válido: {target}")
-                sys.exit(1)
-
-            # Generar rango
-            current = start
-            while current <= end:
-                hosts.append(str(current))
-                current += 1
-            """
             try:
                 # Se acepta 192.168.1.6-12 como 192.168.1.6 - 192.168.1.12
                 start_ip_str, end_ip_str = target.split('-')
@@ -132,3 +114,4 @@ def expand_targets(target_string):
     
     # Se devuelve la lista de hosts a escanear
     return hosts
+

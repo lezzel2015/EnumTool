@@ -321,7 +321,7 @@ def main():
     # Argumentos comunes
     parser.add_argument("-i", "--interface", metavar="", help="Network interface (required for arp_ping)")
     parser.add_argument("-t", "--target", metavar="", help="Target IP or CIDR range")
-    parser.add_argument("-p", "--port", metavar="", help="Destination ports, comma-separated or as a range)")
+    parser.add_argument("-p", "--port", metavar="", help="Destination ports (comma-separated or as a range)")
     parser.add_argument("-S", "--summary", action="store_true", help="Show final summary with added metrics")
     parser.add_argument("--port-all", action="store_true", help="Scan all TCP ports (1–65535)")
     parser.add_argument('--top', type=int, metavar='N', help="Scan the top N most common TCP ports (based on nmap-services frequency, N<=1000)")

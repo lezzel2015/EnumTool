@@ -69,3 +69,4 @@ def parse_ports(port_string: str) -> List[int]:
             ports.add(port)
 
     return sorted(ports)
+

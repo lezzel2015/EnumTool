@@ -3,7 +3,6 @@
 
 from scan.tcp_connect import tcp_connect
 from scapy.all import IP, TCP, sr1
-import scapy.modules.p0fv2 as p0fv2
 from colorama import Fore, Style
 from utils import network
 from utils.top_ports import TOP_1000_TCP_PORTS
@@ -88,3 +87,4 @@ def os_detection(target, ports, timeout):
             print(f"  {Fore.WHITE}Detalle por puerto: {Style.RESET_ALL}")
             for d in detalles:
                 print("    - " + d)
+
