@@ -8,7 +8,7 @@ from colorama import Fore, Style
 from utils import network
 from utils.top_ports import TOP_1000_TCP_PORTS
 
-# Firmas de sistemas operativos (igual que antes)
+# Firmas de sistemas operativos
 os_signatures = [
         # Coincidencia estricta (probable)
         {"os": "Linux",   "ttl": 64,  "window": [29200, 5840], "opts": ["MSS", "SAckOK", "Timestamp", "NOP", "WScale"], "color": Fore.GREEN, "strict": True},
