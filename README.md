@@ -48,24 +48,24 @@ python3 EnumTool.py [acción] [opciones]
 | `-p`, `--port`      |                     | Puerto/s destino (e.g. `22,80`, `20-25`)           |
 | `--port-all`        |                     | Escanear todos los puertos TCP (1-65535)           |
 | `--top N`           |                     | Escanear los N puertos TCP más frecuentes (N≤1000) |
-| `--profile`         | {web,windows,linux} | perfiles de puertos predefinidos                   |
+| `--profile`         | {web,windows,linux} | Perfiles de puertos predefinidos                   |
 | `--timeout`         |                     | Tiempo de espera por paquete (defecto 0.5s)        |
 | `--threads`         |                     | Hilos concurrentes (defecto 5, recomendado ≤10)    |
 | `-S`, `--sumary`    |                     | Mostrar resumen final de la ejecución              |
-| `--format`          | {text,json}         | formato del resumen (texto o json)                 |
-| `--output FICHERO`  |                     | Volcar el resumen a un archivo ("append")            |
+| `--format`          | {text,json}         | Formato del resumen (texto o json)                 |
+| `--output FICHERO`  |                     | Volcar el resumen a un archivo ("append")          |
 
 
 ---
 
-### 3. 🟨 Parámetros Especiales `-H` (HTTP Header Analysis)
+### 3. 🟨 Parámetros Especiales
 
-| Flag           | Description                                                                                  |
-|----------------|----------------------------------------------------------------------------------------------|
-| `--http`       | Forzar HTTP (no TLS) en todos los puertos escaneados en opción -H                            |
-| `--https`      | Forzar HTTPS (TLS) en todos los puertos escaneados en opción -H                              |
-| *(none)*       | Auto detección de protocolo basado en número de puerto (80 → HTTP, 443 → HTTPS) en opción -H |
-| --insecure-tls | deshabilitar la validación TLS en opción -B                                                  |
+| Flag           | Acción | Descripción                                                                     |
+|----------------|--------|---------------------------------------------------------------------------------|
+| `--http`       | -H     | Forzar HTTP (no TLS) en todos los puertos escaneados en opción                  |
+| `--https`      | -H     | Forzar HTTPS (TLS) en todos los puertos escaneados en opción                    |
+| *(none)*       | -H     | Auto detección de protocolo basado en número de puerto (80 → HTTP, 443 → HTTPS) |
+| --insecure-tls | -B     | Deshabilitar la validación TLS en opción                                        |
 
 ---
 
