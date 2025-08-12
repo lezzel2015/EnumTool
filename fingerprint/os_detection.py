@@ -1,7 +1,7 @@
 # fingerprint/os_detection.py
 # Versión mejorada añadiendo banner grabbing
-from scan.tcp_connect import tcp_connect
-from fingerprint.banner_grab import grab_banner
+from scan import tcp_connect
+from fingerprint import grab_banner
 from scapy.all import IP, TCP, sr1
 import socket
 from colorama import Fore, Style
@@ -90,7 +90,7 @@ def probe_rdp_hello(ip, timeout=1.0):
         pass
     return (None, None)
 
-def os_detection_plus(target, ports, timeout):
+def os_detection(target, ports, timeout):
     """
     Detección mejorada de sistema operativo:
     - Fingerprinting activo (TTL, ventana, opciones TCP)

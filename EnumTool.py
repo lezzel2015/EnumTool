@@ -38,9 +38,8 @@ from collections import defaultdict
 # Importación desde otros módulos
 from discovery import arp_ping, icmp_ping, tcp_ping, udp_ping
 from scan import tcp_connect, syn_scan, ack_scan
-from fingerprint import banner_grab, os_detection_plus, http_headers
-from utils import banner, parse_ports, top_ports, PortParseError
-from utils.top_ports import TOP_1000_TCP_PORTS
+from fingerprint import banner_grab, os_detection, http_headers
+from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS
 
 # ---------------------------------------------
 # Configuración de colores y mensajes de error
@@ -448,7 +447,7 @@ def main():
             if technique == "banner_grab":
                 module_result = banner_grab(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, insecure_tls=args.insecure_tls)
             elif technique == "os_detection":
-                module_result = os_detection_plus(args.target, ports, args.timeout)
+                module_result = os_detection(args.target, ports, args.timeout)
             elif technique == "http_headers":
                 http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal)
             #elif technique == "os_detection_plus":

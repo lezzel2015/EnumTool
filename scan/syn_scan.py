@@ -7,8 +7,7 @@ from scapy.all import IP, TCP, sr1, conf, ICMP
 from colorama import Fore, Style
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
-from utils import network
-from utils.services import COMMON_PORTS
+from utils import network, COMMON_PORTS
 
 def scan_syn_port(ip_addr, port, timeout):
     """

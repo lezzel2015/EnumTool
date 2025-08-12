@@ -8,46 +8,15 @@
 # -------------------------------
 # IMPORTACIONES NECESARIAS
 # -------------------------------
-from scan.tcp_connect import tcp_connect                # Escaneo TCP activo reutilizable
-from utils.services import COMMON_PORTS                 # Diccionario de puertos conocidos
-from utils import network                               # Expansión de rangos y subredes
+from scan import tcp_connect                # Escaneo TCP activo reutilizable
+from utils import COMMON_PORTS, network, BANNER_PATTERNS, PAYLOADS
 from colorama import Fore, Style                        # Colores para salida por consola
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import socket
 import string
 import re
 import ssl
-from utils.config import BANNER_PATTERNS, PAYLOADS
-
-# -------------------------------------
-# Banners activos por protocolo conocido
-# -------------------------------------
-"""
-PAYLOADS = {
-    21: b"USER anonymous\r\n",                      # FTP
-    23: b"\r\n",                                    # Telnet
-    25: b"EHLO enumtool.local\r\n",                 # SMTP
-    80: b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",  # HTTP
-    110: b"USER test\r\n",                          # POP3
-    143: b"a001 CAPABILITY\r\n",                    # IMAP
-    443: b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n", # HTTPS (TLS)
-    993: b"\r\n",                                   # IMAPS
-    995: b"\r\n",                                   # POP3S
-}
-"""
-# -------------------------------------
-# Expresiones regulares para extraer versión
-# -------------------------------------
-"""
-VERSION_REGEX = [
-    r"OpenSSH[_\-/\s]?([\d\.p]+)",
-    r"vsFTPd[_\-/\s]?([\d\.]+)",
-    r"Microsoft.*?(IIS|SMTP|Exchange)[/\s]?([\d\.]+)",
-    r"Apache[/\s]?([\d\.]+)",
-    r"ProFTPD[/\s]?([\d\.]+)",
-    r"Postfix[/\s]?([\d\.]+)"
-]
-"""
 
 # -------------------------------------
 # Limpieza del banner para mostrar sólo caracteres válidos
