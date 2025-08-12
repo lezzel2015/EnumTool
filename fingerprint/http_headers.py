@@ -76,7 +76,11 @@ def http_headers(target, ports, timeout=3, threads=10, minimal_output=False, use
     """
     hosts = network.expand_targets(target)
 
+    # Estructura de datos para devolver resultado a main
+    results = {}
+
     for ip_addr in hosts:
+        results.setdefault(ip_addr, {})
         print(f"{Fore.CYAN}Escaneando HTTP Headers en {ip_addr}:{Style.RESET_ALL}")
         for port in ports:
             # Decide protocolo a mostrar
@@ -97,4 +101,9 @@ def http_headers(target, ports, timeout=3, threads=10, minimal_output=False, use
             else:
                 print(f"    {Fore.RED}No se pudo obtener cabeceras HTTP de {ip_addr}:{port}{Style.RESET_ALL}")
 
+            # Guardar resultados por puerto para devolver a main
+            entry = {"service": COMMON_PORTS.get(port, "Desconocido"), "proto": proto, "headers": headers or {},
+                     "status": "OPEN" if headers else "CLOSED"}
+            results[ip_addr][port] = entry
 
+    return results

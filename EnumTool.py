@@ -449,7 +449,7 @@ def main():
             elif technique == "os_detection":
                 module_result = os_detection(args.target, ports, args.timeout)
             elif technique == "http_headers":
-                http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal)
+                module_result = http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal)
             #elif technique == "os_detection_plus":
             #    os_detection_plus(args.target, ports, args.timeout)
 
