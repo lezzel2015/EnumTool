@@ -1,67 +1,64 @@
 # EnumTool
 
-Enumeration and scanning tool for internal pentesting.
+Herramienta de enumeración y escaneo para redes internas orientada a labores de pentesting.
+Permite descubrir hosts, escanear puertos y realizar fingerprinting de servicios mediante
+módulos independientes.
 
-## Usage
+## Instalación
 
-python main.py -m <mode> -tc <technique> [options]
+```bash
+pip install -r requirements.txt
+```
 
-## Modes and Techniques
+## Uso básico
 
-- discovery: arp, tcp, udp, icmp
-- scan: connect, syn
+```bash
+python3 EnumTool.py [acción] [opciones]
+```
 
-## Optional Flags
+### Acciones disponibles
 
-- -s, --soft: Evaluate HTTP headers (only with scan mode)
-- -o, --system: OS detection (works with both modes)
+- `-dA`  : discovery **ARP ping**
+- `-dI`  : discovery **ICMP ping**
+- `-dT`  : discovery **TCP ping**
+- `-dU`  : discovery **UDP ping**
+- `-sT`  : scan **TCP connect**
+- `-sS`  : scan **SYN scan**
+- `-sA`  : scan **ACK scan**
+- `-B`   : fingerprint **banner grabbing**
+- `-V`   : fingerprint **detección de sistema operativo**
+- `-H`   : fingerprint **cabeceras HTTP/HTTPS**
 
-## 🎛️ Flags Overview: EnumTool
+### Opciones comunes
 
-### 1. 🔹 Mutually Exclusive Action Flags
+- `-i`, `--interface`  interfaz de red (obligatoria con `-dA`)
+- `-t`, `--target`     IP, rango o red objetivo
+- `-p`, `--port`       puertos destino (`22,80,443` o `20-25`)
+- `--port-all`         escanear todos los puertos TCP (1-65535)
+- `--top N`            escanear los N puertos TCP más frecuentes (N≤1000)
+- `--profile {web,windows,linux}`  perfiles de puertos predefinidos
+- `--timeout`          tiempo de espera por paquete (defecto 0.5s)
+- `--threads`          hilos concurrentes (defecto 5, recomendado ≤10)
+- `-S`, `--summary`    mostrar resumen final de la ejecución
+- `--format {text,json}`  formato del resumen (`text` o `json`)
+- `--output FICH`      volcar el resumen a un archivo (append)
+- `--https` / `--http` forzar protocolo al usar `-H`
+- `--insecure-tls`     deshabilitar la validación TLS en `-B`
 
-| Flag |  Category      |   Technique        |          Module                     |
-|------|----------------|--------------------|-------------------------------------|
-| `-dA`|  Discovery     |   `arp_ping`       |   `discovery/arp_ping.py`           |
-| `-dI`|  Discovery     |   `icmp_ping`      |   `discovery/icmp_ping.py`          |
-| `-dT`|  Discovery     |   `tcp_ping`       |   `discovery/tcp_ping.py`           |
-| `-dU`|  Discovery     |   `udp_ping`       |   `discovery/udp_ping.py`           |
-| `-sT`|  Scan          |   `tcp_connect`    |   `scan/tcp_connect.py`             |
-| `-sS`|  Scan          |   `syn_scan`       |   `scan/syn_scan.py`                |
-| `-sA`|  Scan          |   `ack_scan`       |   `scan/ack_scan.py`                |
-| `-B` |  Fingerprint   |   `banner_grab`    |   `fingerprint/banner_grab.py`      |
-| `-O` |  Fingerprint   |   `os_detection`   |   `fingerprint/os_detection.py`     |
-| `-V` |  Fingerprint   |   `os_detection`   |   `fingerprint/os_detection_plus.py`|
-| `-H` |  Fingerprint   |   `http_headers`   |   `fingerprint/http_headers.py`     |
+### Ejemplos
 
----
+```bash
+sudo python3 EnumTool.py -dA -i eth0 -t 192.168.1.0/24
+sudo python3 EnumTool.py -sT -t 192.168.1.10 -p 22,80,443
+sudo python3 EnumTool.py -sS -t 10.0.0.5 --top 100
+sudo python3 EnumTool.py -B -t 10.0.0.5 -p 80,443 --insecure-tls
+sudo python3 EnumTool.py -H -t 10.0.0.5 --https
+sudo python3 EnumTool.py -V -t 10.0.0.5 -p 80,443 --summary --format json --output resultados.log
+```
 
-### 2. 🟩 Common Parameters
+## Avisos
 
-| Flag               | Description                                            |
-|--------------------|--------------------------------------------------------|
-| `-i`, `--interface`| Network interface (required for `-dA`)                 |
-| `-t`, `--target`   | Target IP or CIDR range                                |
-| `-p`, `--port`     | Target ports (e.g. `22,80`, `20-25`)                   |
-| `--port-all`       | Scan all TCP ports from 1 to 65535                     |
-| `-T`, `--timeout`  | Timeout in seconds (default: `0.5`)                    |
-| `--threads`        | Number of concurrent threads (default: 10)            |
+- Los flags de acción son mutuamente excluyentes; sólo se puede usar uno por ejecución.
+- Algunas técnicas requieren privilegios de root (ARP, ICMP, UDP ping, SYN y ACK scan).
+- Para evitar fallos de Scapy al usar muchos hilos se recomienda `--threads` ≤ 10.
 
----
-
-### 3. 🟨 Special flags for `-H` (HTTP Header Analysis)
-
-| Flag       | Description                                                    |
-|------------|----------------------------------------------------------------|
-| `--http`   | Force HTTP (no TLS) for all scanned ports                      |
-| `--https`  | Force HTTPS (TLS) for all scanned ports                        |
-| *(none)*   | Auto-detect protocol based on port number (80 → HTTP, 443 → HTTPS) |
-
----
-
-### ⚠️ Important Notes
-
-- `--interface` is **required only for `-dA`**.
-- `--target` is required for **all techniques**.
-- Action flags (e.g. `-sT`, `-B`) are **mutually exclusive**.
-- Recommended `--threads ≤ 10` to avoid concurrency issues in Scapy.
