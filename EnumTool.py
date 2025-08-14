@@ -25,24 +25,24 @@ Ejemplo de uso:
     sudo python3 EnumTool.py -B  -t 192.168.1.5 -p 80,443 --summary
 """
 
-import argparse
+from argparse import RawTextHelpFormatter, ArgumentParser
 import sys
 import os
 import time
 import json
 from datetime import datetime
 from dataclasses import dataclass, asdict, field   # Para estructurar el resumen de ejecución
-from typing import Any, Dict, Optional, Iterable, Union
-from collections import defaultdict
+from typing import Any, Dict, Optional
 
 # Importación desde otros módulos
 from discovery import arp_ping, icmp_ping, tcp_ping, udp_ping
 from scan import tcp_connect, syn_scan, ack_scan
 from fingerprint import banner_grab, os_detection, http_headers
-from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS
+from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS, build_module_summary
 
 # ---------------------------------------------
 # Configuración de colores y mensajes de error
+#   - Se utiliza bloque Try-except para que si no está instalado colorama no falle la aplicación.
 try:
     from colorama import init, Fore, Style
     init(autoreset=True)
@@ -173,132 +173,15 @@ class RunSummary:
     module_summary: Optional[Dict[str, Any]] = field(default=None)
     module_result: Optional[Dict[str, Any]] = field(default=None)  # opcional (JSON)
 
-
-# ---------------------------------------------
-def _is_scan_schema(d: Any) -> bool:
-    """
-    Detecta si el resultado tiene forma de escaneo por puertos:
-    { ip: { port(int): { ... }, ... }, ... }
-    """
-    if not isinstance(d, dict):
-        return False
-    # tomar primer valor
-    for v in d.values():
-        if isinstance(v, dict):
-            # ¿tiene claves int (puertos)?
-            return any(isinstance(k, int) for k in v.keys()) or any(
-                isinstance(k, str) and k.isdigit() for k in v.keys()
-            )
-        break
-    return False
-
-
-# ---------------------------------------------
-def summarize_scan_results(results_dict: Dict[str, Dict[Union[int, str], Dict[str, Any]]]) -> Dict[str, Any]:
-    """
-    Convierte resultados detallados por puerto en métricas agregadas por host.
-    Acepta claves de puerto int o str.
-    """
-    if not results_dict:
-        return {"type": "scan", "hosts": {}, "open_flat": []}
-    hosts_summary = {}
-    open_flat = []
-    for ip, ports_map in results_dict.items():
-        c_open = c_closed = c_filtered = c_other = 0
-        open_ports = []
-        for p, r in ports_map.items():
-            try:
-                port = int(p)
-            except Exception:
-                port = p
-            st = (r or {}).get("status", "UNKNOWN")
-            if st == "OPEN":
-                c_open += 1
-                open_ports.append(port)
-                open_flat.append((ip, port, (r or {}).get("service", "Unknown"), (r or {}).get("rtt")))
-            elif st == "CLOSED":
-                c_closed += 1
-            elif st in ("FILTERED", "NO_TCP"):
-                c_filtered += 1
-            else:
-                c_other += 1
-        hosts_summary[ip] = {
-            "open": sorted(open_ports, key=lambda x: (isinstance(x, str), x)),
-            "counts": {
-                "open": c_open,
-                "closed": c_closed,
-                "filtered_or_notcp": c_filtered,
-                "other": c_other,
-                "total": c_open + c_closed + c_filtered + c_other
-            }
-        }
-    return {"type": "scan", "hosts": hosts_summary, "open_flat": open_flat}
-
-
-# ---------------------------------------------
-def summarize_discovery_results(result: Any) -> Dict[str, Any]:
-    """
-    Soporta:
-      - lista/iterable de IPs
-      - dict { ip: {...} } (p.ej. incluye MAC)
-    """
-    hosts = []
-    data = {}
-    if isinstance(result, dict):
-        hosts = list(result.keys())
-        data = result
-    elif isinstance(result, (list, tuple, set)):
-        hosts = list(result)
-    else:
-        # desconocido: resumen mínimo
-        return {"type": "discovery", "count": 0, "hosts": []}
-    return {"type": "discovery", "count": len(hosts), "hosts": sorted(hosts), "data": data}
-
-
-# ---------------------------------------------
-def summarize_generic_mapping(result: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Para módulos tipo banner/http/os_detection que devuelven por host/puerto
-    pero no exactamente estado OPEN/CLOSED. Se resume por host y cuenta claves.
-    """
-    summary = {}
-    for ip, v in (result or {}).items():
-        if isinstance(v, dict):
-            summary[ip] = {"keys": list(v.keys()), "count": len(v)}
-        else:
-            summary[ip] = {"value_type": type(v).__name__}
-    return {"type": "generic", "hosts": summary}
-
-
-# ---------------------------------------------
-def build_module_summary(technique: str, module_result: Any) -> Optional[Dict[str, Any]]:
-    if module_result is None:
-        return None
-    # 1) Escaneo por puertos (syn_scan, tcp_connect, ack_scan, banner_grab/http si usan puertos)
-    if _is_scan_schema(module_result):
-        return summarize_scan_results(module_result)
-    # 2) Discovery (arp_ping, icmp_ping, tcp_ping, udp_ping)
-    if technique in ("arp_ping", "icmp_ping", "tcp_ping", "udp_ping"):
-        return summarize_discovery_results(module_result)
-    # 3) Otros mapeos por host/puerto (banner_grab, http_headers, os_detection)
-    if isinstance(module_result, dict):
-        return summarize_generic_mapping(module_result)
-    # 4) Lista simple → discovery
-    if isinstance(module_result, (list, tuple, set)):
-        return summarize_discovery_results(module_result)
-    # Fallback mínimo
-    return {"type": "raw", "repr": repr(module_result)[:800]}
-
-
 # ---------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description=banner.BANNER + """
 
             Enumeration and scanning tool for local networks
 
 """,
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=RawTextHelpFormatter
     )
 
     # Grupo de acciones mutuamente excluyentes
@@ -427,13 +310,13 @@ def main():
         # Ejecutar técnica correspondiente
         if mode == "discovery":
             if technique == "arp_ping":
-                arp_ping(args.interface, args.target, args.timeout)
+                module_result = arp_ping(args.interface, args.target, args.timeout)
             elif technique == "icmp_ping":
-                icmp_ping(args.target, args.timeout)
+                module_result = icmp_ping(args.target, args.timeout)
             elif technique == "tcp_ping":
-                tcp_ping(args.target, ports, args.timeout)
+                module_result = tcp_ping(args.target, ports, args.timeout)
             elif technique == "udp_ping":
-                udp_ping(args.target, ports, args.timeout)
+                module_result = udp_ping(args.target, ports, args.timeout)
 
         elif mode == "scan":
             if technique == "tcp_connect":
@@ -441,7 +324,7 @@ def main():
             elif technique == "syn_scan":
                 module_result = syn_scan(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, verbose=True)
             elif technique == "ack_scan":
-                ack_scan(args.target, ports, args.timeout)
+                module_result = ack_scan(args.target, ports, args.timeout)
 
         elif mode == "fingerprint":
             if technique == "banner_grab":
@@ -449,9 +332,7 @@ def main():
             elif technique == "os_detection":
                 module_result = os_detection(args.target, ports, args.timeout)
             elif technique == "http_headers":
-                module_result = http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal)
-            #elif technique == "os_detection_plus":
-            #    os_detection_plus(args.target, ports, args.timeout)
+                module_result = http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, insecure_tls=args.insecure_tls)
 
         # ---------------------------------------------
         # Finalizar y mostrar duración
@@ -467,12 +348,12 @@ def main():
         exit_code = 1
         printer.emit("warn", f"Excepción no controlada: {ex.__class__.__name__}: {ex}")
         raise
+
     finally:
         elapsed = time.perf_counter() - t0
 
         try:
             # Se reutiliza 'ports' para reflejar los puertos efectivos
-            # ports_list = ports if ports is not None else None
             ports_list = ports if (locals().get("ports") is not None) else None
 
             module_summary = build_module_summary(technique, module_result) if args.summary else None
@@ -494,12 +375,15 @@ def main():
                                   
             if args.summary:
                 if args.format == "json":
+                    # asdict(summary) -->Convierte un dataclass (summary) en un dict de Python (recursivo).
+                    # json.dumps(..., ensure_ascii=False) --> Serializa ese dict a una cadena JSON y no escapa los caracteres no ASCII.
                     line = json.dumps(asdict(summary), ensure_ascii=False)
                     # para separar los diferentes resultados en un mismo fichero, se añade fecha y hora.
                     if args.output_file:
                         with open(args.output_file, "a", encoding="utf-8") as f:
                             f.write(f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ###\n")
                             f.write(line + "\n")
+
                     print(line)
                     
                 else:
@@ -529,8 +413,7 @@ def main():
                             printer.emit(
                                 "info",
                                 f"  hosts activos: {module_summary.get('count', 0)} -> "
-                                f"{', '.join(module_summary.get('hosts', [])) or '-'}"
-                            )
+                                f"{', '.join(module_summary.get('hosts_summary', []) or module_summary.get('hosts', [])) or '-'}")
                         else:
                             printer.emit("info", f"  resumen módulo: {module_summary}")
 

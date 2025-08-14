@@ -8,11 +8,13 @@ import ssl
 from colorama import Fore, Style
 from utils import network, COMMON_PORTS
 
-def get_http_headers(ip_addr, port, timeout=3, use_https=None):
+def get_http_headers(ip_addr, port, timeout=3, use_https=None, insecure_tls=False):
     """
     Obtiene las cabeceras HTTP/HTTPS realizando una petición GET al host/puerto indicado.
     Si use_https==True fuerza TLS, si False HTTP normal, si None autodetecta por puerto.
     Devuelve un diccionario {header: valor} o None si hay error.
+    Insecure TLS: si el cert es self-signed o inválido, igualmente devolverá headers y marcará status: "OPEN"
+    si obtiene cabeceras
     """
     headers = {}
     try:
@@ -34,8 +36,13 @@ def get_http_headers(ip_addr, port, timeout=3, use_https=None):
         # HTTPS (TLS)
         if tls:
             context = ssl.create_default_context()
+            if insecure_tls:
+                # Ignorar validación de certificado y SNI/hostname
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
             with socket.create_connection((ip_addr, port), timeout=timeout) as sock:
-                with context.wrap_socket(sock, server_hostname=ip_addr) as ssock:
+                with context.wrap_socket(sock, server_hostname=None if insecure_tls else ip_addr ) as ssock:
+                    ssock.settimeout(timeout)
                     ssock.sendall(req)
                     response = b""
                     while True:
@@ -67,7 +74,7 @@ def get_http_headers(ip_addr, port, timeout=3, use_https=None):
     except Exception as e:
         return None
 
-def http_headers(target, ports, timeout=3, threads=10, minimal_output=False, use_https=None):
+def http_headers(target, ports, timeout=3, threads=5, minimal_output=False, use_https=None, insecure_tls=False):
     """
     Analiza cabeceras HTTP(S) de uno o varios hosts objetivo en los puertos indicados.
     Si no se pasan puertos, usa 80 y 443 por defecto.
@@ -91,7 +98,7 @@ def http_headers(target, ports, timeout=3, threads=10, minimal_output=False, use
             service = COMMON_PORTS.get(port, "Desconocido")
             print(f"\n  {Fore.YELLOW}[{proto}] {ip_addr}:{port} ({service}){Style.RESET_ALL}")
 
-            headers = get_http_headers(ip_addr, port, timeout=timeout, use_https=use_https)
+            headers = get_http_headers(ip_addr, port, timeout=timeout, use_https=use_https, insecure_tls=insecure_tls)
             if headers:
                 for k, v in headers.items():
                     if k.lower() in ("server", "x-powered-by"):

@@ -17,11 +17,19 @@ def arp_ping(interface, target, tOut):
         ether = Ether(dst="ff:ff:ff:ff:ff:ff")
         arp = ARP(pdst=target)
         packet = ether/arp
+        # Estructura para devolver los resultados
+        results = {}
 
         # Enviar y recibir respuestas en la interfaz indicada
         ans, _ = srp(packet, timeout=tOut, iface=interface, verbose=0)
 
         for sent, received in ans:
             print(f"{Fore.GREEN}[+] Host {received.psrc} is on - MAC: {received.hwsrc}{Style.RESET_ALL}")
+            results[received.psrc] = {"mac": received.hwsrc, "method": "ARP"}
+
+        return results
     except Exception as e:
         print(f"{Fore.RED}[!] Error en ARP Ping: {e}{Style.RESET_ALL}")
+
+    return None
+
