@@ -10,7 +10,7 @@ try:
 except ImportError:
     # Colorama no instalado, define colores vacíos para no romper la salida
     class Dummy:
-        RESET = RED = YELLOW = CYAN = WHITE = ""
+        RESET_ALL = RED = YELLOW = CYAN = WHITE = ""
     Fore = Style = Dummy()
 # ----------------------------
 # Funciones que muestran mensajes en un determinado color, dependiendo de 

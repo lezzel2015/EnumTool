@@ -35,3 +35,4 @@ def icmp_ping(target, tout):
         print(f"{Fore.RED}[!] Error en ICMP Ping: {e}{Style.RESET_ALL}")
 
     return results
+
