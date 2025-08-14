@@ -44,9 +44,9 @@ def fingerprint_packet(ip_addr, port, timeout):
                     #return sig["os"], "posible", f"(TTL={ttl}, WIN={window}, OPTS={opts})"
                     return sig["os"], "posible", f"(TTL={ttl}, WIN={window}, OPTS={opts})", {"ttl": ttl, "win": window, "opts": opts}
         # Si no hay coincidencia
-        return (None, None, f"(TTL={ttl}, WIN={window}, OPTS={opts})", {"ttl": ttl, "win": window, "opts": opts})
+        return None, None, f"(TTL={ttl}, WIN={window}, OPTS={opts})", {"ttl": ttl, "win": window, "opts": opts}
     except Exception as e:
-        return (None, None, f"Error: {e}", None)
+        return None, None, f"Error: {e}", None
 
 # --- "Probes" SMB/RDP  ---
 def probe_smb_hello(ip, timeout=1.0):
@@ -68,12 +68,12 @@ def probe_smb_hello(ip, timeout=1.0):
             data = s.recv(1024)
         raw = data.lower()
         if b"smb2" in raw:
-            return ("SMBv2+", "445=SMBv2 (negotiation)")
+            return "SMBv2+", "445=SMBv2 (negotiation)"
         if b"nt lm 0.12" in raw or b"\xffsmb" in raw:
-            return ("SMBv1", "445=SMBv1 (NT LM 0.12)")
+            return "SMBv1", "445=SMBv1 (NT LM 0.12)"
     except Exception:
         pass
-    return (None, None)
+    return None, None
 
 def probe_rdp_hello(ip, timeout=1.0):
     rdp_neg_req = (
@@ -85,10 +85,10 @@ def probe_rdp_hello(ip, timeout=1.0):
             s.sendall(rdp_neg_req)
             data = s.recv(1024)
         if data.startswith(b"\x03\x00") and len(data) >= 11:
-            return ("RDP", "3389=RDP Negotiation Response")
+            return "RDP", "3389=RDP Negotiation Response"
     except Exception:
         pass
-    return (None, None)
+    return None, None
 
 def os_detection(target, ports, timeout):
     """

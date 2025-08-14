@@ -71,10 +71,10 @@ def get_http_headers(ip_addr, port, timeout=3, use_https=None, insecure_tls=Fals
                 headers[k.strip()] = v.strip()
         return headers
 
-    except Exception as e:
+    except Exception:
         return None
 
-def http_headers(target, ports, timeout=3, threads=5, minimal_output=False, use_https=None, insecure_tls=False):
+def http_headers(target, ports, timeout=3, use_https=None, insecure_tls=False):
     """
     Analiza cabeceras HTTP(S) de uno o varios hosts objetivo en los puertos indicados.
     Si no se pasan puertos, usa 80 y 443 por defecto.

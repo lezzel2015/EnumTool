@@ -48,7 +48,7 @@ try:
     init(autoreset=True)
 except ImportError:
     class Dummy:
-        RESET = RED = YELLOW = CYAN = WHITE = ""
+        RESET_ALL = RED = YELLOW = CYAN = WHITE = ""
     Fore = Style = Dummy()
 
 def error(msg):
@@ -209,7 +209,7 @@ def main():
     parser.add_argument("--threads", metavar="", type=int, default=5, help="Number of threads to use in concurrent scans (default: 5)")
     parser.add_argument("--format", choices=["text", "json"], default="text", help="Final summary output format: 'text' for short or 'json' for extended")
     parser.add_argument("--output", dest="output_file", default=None, help="File path to dump output (append)")
-    parser.add_argument("--insecure-tls", action="store_true", help="Disable TLS certificate verification for HTTPS/SMTPS banner grabbing")
+    parser.add_argument("--insecure-tls", action="store_true", help="Disable TLS certificate verification for HTTPS/SMTPS banner grabbing & HTTP Headers")
 
     # Argumentos autoexcluyentes para el análisis de cabeceras HTTP/HTTPS
     proto_group = parser.add_mutually_exclusive_group()
@@ -328,11 +328,11 @@ def main():
 
         elif mode == "fingerprint":
             if technique == "banner_grab":
-                module_result = banner_grab(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, insecure_tls=args.insecure_tls)
+                module_result = banner_grab(args.target, ports, args.timeout, threads=args.threads, insecure_tls=args.insecure_tls)
             elif technique == "os_detection":
                 module_result = os_detection(args.target, ports, args.timeout)
             elif technique == "http_headers":
-                module_result = http_headers(args.target, ports, args.timeout, threads=args.threads, minimal_output=minimal, insecure_tls=args.insecure_tls)
+                module_result = http_headers(args.target, ports, args.timeout, insecure_tls=args.insecure_tls)
 
         # ---------------------------------------------
         # Finalizar y mostrar duración

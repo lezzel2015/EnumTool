@@ -81,7 +81,7 @@ def scan_syn_port(ip_addr, port, timeout):
 
     return port, result
 
-def syn_scan(target, ports, timeout, threads=10, minimal_output=False, verbose=True):
+def syn_scan(target, ports, timeout, threads=5, minimal_output=False, verbose=True):
     """
     Ejecuta un escaneo SYN Scan concurrente sobre varios hosts y puertos.
     Usa múltiples hilos (threads) para mejorar la velocidad del escaneo.

@@ -68,8 +68,8 @@ def summarize_discovery_results(resultado: Any) -> Dict[str, Any]:
       - lista/iterable de IPs
       - dict { ip: {...} } (p.ej. incluye MAC, method, ports, rtt, flags...)
     """
-    hosts = []
-    data = {}
+    #hosts = []
+    #data = {}
     if isinstance(resultado, dict):
         hosts = list(resultado.keys())
         data = resultado
@@ -86,7 +86,7 @@ def summarize_discovery_results(resultado: Any) -> Dict[str, Any]:
     for ip in hosts_sorted:
         info = data.get(ip, {}) if isinstance(data, dict) else {}
         meth = (info.get("method") or "").upper() if isinstance(info, dict) else ""
-        tag = ""
+        #tag = ""
         if meth in {"TCP", "UDP"}:
             ports = info.get("ports") or []
             if isinstance(ports, (list, tuple)) and ports:

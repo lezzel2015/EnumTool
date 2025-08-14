@@ -4,7 +4,7 @@
 from scapy.all import ARP, Ether, srp
 from colorama import Fore, Style
 
-def arp_ping(interface, target, tOut):
+def arp_ping(interface, target, tout):
     """
     Envía paquetes ARP para descubrir hosts activos en una red local.
     target: rango objetivo en formato CIDR (ej: '192.168.1.0/24')
@@ -21,7 +21,7 @@ def arp_ping(interface, target, tOut):
         results = {}
 
         # Enviar y recibir respuestas en la interfaz indicada
-        ans, _ = srp(packet, timeout=tOut, iface=interface, verbose=0)
+        ans, _ = srp(packet, timeout=tout, iface=interface, verbose=0)
 
         for sent, received in ans:
             print(f"{Fore.GREEN}[+] Host {received.psrc} is on - MAC: {received.hwsrc}{Style.RESET_ALL}")

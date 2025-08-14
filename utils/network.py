@@ -32,8 +32,7 @@ def expand_targets(target_string):
     hosts = []
     # Primero separamos por comas la entrada
     targets = [p.strip() for p in target_string.split(',') if p.strip()]
-    # print(parts)
-    # Se procesa cada parte... Si hay un guión --> es un rango de Ips, sino, es 
+    # Se procesa cada parte... Si hay un guión --> es un rango de Ips, sino, es
     # una ip aislada
     for target in targets:
         if '/' in target:

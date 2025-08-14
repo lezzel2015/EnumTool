@@ -1,13 +1,12 @@
 # discovery/tcp_ping.py
 # TCP Ping - Envía SYN y detecta respuesta SYN/ACK o RST
 
-import ipaddress
 from scapy.all import IP, TCP, sr1
 from colorama import Fore, Style
 from utils import network
 import time
 
-def tcp_ping(target, ports, tOut):
+def tcp_ping(target, ports, tout):
     """
     Realiza TCP ping a uno o varios hosts (IP o rango CIDR) y puertos.
     Solo muestra los hosts que responden (SYN/ACK o RST) a al menos un puerto.
@@ -27,7 +26,7 @@ def tcp_ping(target, ports, tOut):
             for port in ports:
                 pkt = IP(dst=ip_addr)/TCP(dport=port, flags='S')
                 start = time.time()
-                resp = sr1(pkt, timeout=tOut, verbose=0)
+                resp = sr1(pkt, timeout=tout, verbose=0)
                 rtt = (time.time() - start) if resp else None
                 if resp and resp.haslayer(TCP) and resp.getlayer(TCP).flags in [0x12, 0x14]:
                     print(f"{Fore.GREEN}[+] Host {ip_addr} is on{Style.RESET_ALL}")

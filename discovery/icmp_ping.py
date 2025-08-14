@@ -5,13 +5,12 @@
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 #
-import ipaddress
 from scapy.all import IP, ICMP, sr1
 from colorama import Fore, Style
 from utils import network
 import time
 
-def icmp_ping(target, tOut):
+def icmp_ping(target, tout):
     """
     Envía ICMP Echo Request a uno o varios hosts (IP única o rango CIDR).
     target: IP o rango (ej: '192.168.1.0/24')
@@ -26,7 +25,7 @@ def icmp_ping(target, tOut):
         for ip_addr in hosts:
             pkt = IP(dst=ip_addr)/ICMP()
             t0=time.time()
-            resp = sr1(pkt, timeout=tOut, verbose=0)
+            resp = sr1(pkt, timeout=tout, verbose=0)
             rtt=(time.time()-t0) if resp else None
             if resp:
                 print(f"{Fore.GREEN}[+] Host {ip_addr} is on{Style.RESET_ALL}")

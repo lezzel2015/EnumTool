@@ -71,16 +71,16 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
             s.settimeout(timeout)
             s.connect((ip, port))
             # intento pasivo
-            raw = _recv_all(s, tries=1)
-            if not raw:
+            data = _recv_all(s, tries=1)
+            if not data:
                 # payload específico o “\r\n” genérico
                 payload = PAYLOADS.get(port, b"\r\n")
                 try:
                     s.sendall(payload)
                 except Exception:
                     pass
-                raw = _recv_all(s, tries=2)
-            return raw, "OK"
+                data = _recv_all(s, tries=2)
+            return data, "OK"
 
     def _tcp_tls():
         # Para grabbing NO validamos cert/hostname
@@ -91,15 +91,15 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
         try:
             with socket.create_connection((ip, port), timeout=timeout) as sock:
                 with ctx.wrap_socket(sock, server_hostname=ip) as ssock:
-                    raw = _recv_all(ssock, tries=2)
-                    if not raw:
+                    data_raw = _recv_all(ssock, tries=2)
+                    if not data_raw:
                         payload = PAYLOADS.get(port, b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n")
                         try:
                             ssock.sendall(payload)
                         except Exception:
                             pass
-                        raw = _recv_all(ssock, tries=2)
-            return raw, "TLS_OK"
+                        data_raw = _recv_all(ssock, tries=2)
+            return data_raw, "TLS_OK"
         except Exception:
             return "", "TLS_FAIL"
 
@@ -128,7 +128,7 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
         version = extract_version(banner)
 
         # Normaliza salida
-        return (banner if banner else "Unknown", version, status if status else "OK")
+        return banner if banner else "Unknown", version, status if status else "OK"
 
     except socket.timeout:
         return "Unknown", None, "TIMEOUT"
@@ -139,7 +139,7 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
 # -------------------------------------
 # Módulo principal: escanea puertos, recoge banners y los analiza
 # -------------------------------------
-def banner_grab(target, ports, timeout, threads=5, minimal_output=False, insecure_tls=False) :
+def banner_grab(target, ports, timeout, threads=5, insecure_tls=False) :
     """
     Ejecuta el módulo completo:
     1. Escanea los puertos especificados con tcp_connect()
@@ -154,7 +154,7 @@ def banner_grab(target, ports, timeout, threads=5, minimal_output=False, insecur
         - minimal_output: sin efecto aquí (conservado por compatibilidad)
     """
     threads = max(1, min(threads, 100))  # Seguridad: límite máximo de hilos
-    hosts = network.expand_targets(target)
+    # hosts = network.expand_targets(target)
     results = {}
 
     print(f"{Fore.CYAN}[*] Fase 1: escaneo TCP Connect para puertos abiertos...{Style.RESET_ALL}")
@@ -191,6 +191,6 @@ def banner_grab(target, ports, timeout, threads=5, minimal_output=False, insecur
                 status = entry["status"]
                 results[ip_addr][port] = entry
                 version_str = f" | Version: {version}" if version else ""
-                print(f"  {Fore.GREEN}[BANNER] {ip_addr}:{port} ({service}) -> {banner}{version_str}{Style.RESET_ALL}")
+                print(f"  {Fore.GREEN}[BANNER] {ip_addr}:{port} - [{status}] - ({service}) -> {banner}{version_str}{Style.RESET_ALL}")
 
     return results

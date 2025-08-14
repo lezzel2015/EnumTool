@@ -7,7 +7,7 @@ from scapy.all import IP, UDP, sr1, ICMP
 from utils import network
 
 
-def udp_ping(target, ports, tOut):
+def udp_ping(target, ports, tout):
     """
     Envía paquetes UDP a uno o varios hosts (IP o rango CIDR) y a varios puertos.
     Muestra solo las IPs que responden con ICMP Port Unreachable (host activo).
@@ -28,7 +28,7 @@ def udp_ping(target, ports, tOut):
             for port in ports:
                 # Construir y enviar el paquete UDP al puerto destino
                 pkt = IP(dst=ip_addr)/UDP(dport=port)
-                resp = sr1(pkt, timeout=tOut, verbose=0)
+                resp = sr1(pkt, timeout=tout, verbose=0)
                 # Considerar activo si responde con ICMP type 3 (Destination Unreachable) y código relacionado con el puerto
                 if resp and resp.haslayer(ICMP) and resp.getlayer(ICMP).type == 3 and resp.getlayer(ICMP).code in [1,2,3,9,10,13]:
                     print(f"{Fore.GREEN}[+] Host {ip_addr} is on{Style.RESET_ALL}")
