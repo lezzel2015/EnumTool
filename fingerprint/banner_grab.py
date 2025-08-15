@@ -8,15 +8,15 @@
 # -------------------------------
 # IMPORTACIONES NECESARIAS
 # -------------------------------
-from scan import tcp_connect                # Escaneo TCP activo reutilizable
 from utils import COMMON_PORTS, network, BANNER_PATTERNS, PAYLOADS
-from colorama import Fore, Style                        # Colores para salida por consola
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import socket
 import string
 import re
 import ssl
+
+from scan import tcp_connect                # Escaneo TCP activo reutilizable
+from utils import Fore, Style
 
 # -------------------------------------
 # Limpieza del banner para mostrar sólo caracteres válidos

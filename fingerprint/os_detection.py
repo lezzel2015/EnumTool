@@ -4,8 +4,8 @@ from scan import tcp_connect
 from fingerprint import grab_banner
 from scapy.all import IP, TCP, sr1
 import socket
-from colorama import Fore, Style
-from utils.top_ports import TOP_1000_TCP_PORTS
+
+from utils import TOP_1000_TCP_PORTS, Fore, Style
 
 # Firmas de sistemas operativos (igual que antes)
 os_signatures = [

@@ -5,11 +5,10 @@
 # Si recibe RST, el puerto está UNFILTERED (no filtrado).
 # Si no recibe respuesta o recibe ICMP unreachable, el puerto está FILTERED (filtrado)
 
-from colorama import Fore, Style
 from scapy.all import IP, TCP, sr1, conf, ICMP
 import time
 
-from utils import network, COMMON_PORTS
+from utils import network, COMMON_PORTS, Fore, Style
 
 
 def ack_scan(target, ports, timeout=2):

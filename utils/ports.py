@@ -5,25 +5,14 @@ import sys
 from typing import List, Iterable, Set
 
 class PortParseError(ValueError):
-    """Excepción personalizada para errores al parsear puertos."""
+    """Excepción personalizada para errores al parsear puertos.
+        De esta manera si hay algún error al parsear puertos, se devuelve
+        el control a la función principal para que sea ésta la que cierre
+        la ejecución.
+    """
     pass
 
-# --------- COLORES ---------
-try:
-    from colorama import init, Fore, Style
-    init(autoreset=True)
-except ImportError:
-    # Colorama no instalado, define colores vacíos para no romper la salida
-    class Dummy:
-        RESET = RED = YELLOW = CYAN = WHITE = ""
-    Fore = Style = Dummy()
-# ----------------------------
-# Funciones que muestran mensajes en un determinado color, dependiendo de 
-# la información que proporcionan
 
-def error(msg):
-    print(f"{Fore.RED}[!] {msg}{Style.RESET_ALL}")
-    
 def parse_ports(port_string: str) -> List[int]:
     """
     Procesa una cadena como:

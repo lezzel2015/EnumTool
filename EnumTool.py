@@ -25,11 +25,11 @@ Ejemplo de uso:
     sudo python3 EnumTool.py -B  -t 192.168.1.5 -p 80,443 --summary
 """
 
-from argparse import RawTextHelpFormatter, ArgumentParser
 import sys
 import os
 import time
 import json
+from argparse import RawTextHelpFormatter, ArgumentParser
 from datetime import datetime
 from dataclasses import dataclass, asdict, field   # Para estructurar el resumen de ejecución
 from typing import Any, Dict, Optional
@@ -38,34 +38,7 @@ from typing import Any, Dict, Optional
 from discovery import arp_ping, icmp_ping, tcp_ping, udp_ping
 from scan import tcp_connect, syn_scan, ack_scan
 from fingerprint import banner_grab, os_detection, http_headers
-from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS, build_module_summary
-
-# ---------------------------------------------
-# Configuración de colores y mensajes de error
-#   - Se utiliza bloque Try-except para que si no está instalado colorama no falle la aplicación.
-try:
-    from colorama import init, Fore, Style
-    init(autoreset=True)
-except ImportError:
-    class Dummy:
-        RESET_ALL = RED = YELLOW = CYAN = WHITE = ""
-    Fore = Style = Dummy()
-
-def error(msg):
-    print(f"{Fore.RED}[!] {msg}{Style.RESET_ALL}")
-
-def warning(msg):
-    print(f"{Fore.YELLOW}[!] {msg}{Style.RESET_ALL}")
-
-def info(msg):
-    print(msg)
-
-def result(msg, show_time=False):
-    if show_time:
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{Fore.CYAN}{msg} [{now}]{Style.RESET_ALL}")
-    else:
-        print(f"{Fore.CYAN}{msg}{Style.RESET_ALL}")
+from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS, build_module_summary, error, warning, info, result, Fore, Style
 
 
 # ---------------------------------------------
@@ -174,6 +147,8 @@ class RunSummary:
     module_result: Optional[Dict[str, Any]] = field(default=None)  # opcional (JSON)
 
 # ---------------------------------------------
+# Función main()
+#
 def main():
     parser = ArgumentParser(
         description=banner.BANNER + """
@@ -230,9 +205,9 @@ def main():
     if not selected_flag:
         parser.error("Debes elegir una acción entre -dA, -dI, -dT, -dU, -sT, -sS, -sA, -B, -V, -H")
 
+    # A partir del flag, sabemos el modo y técnica a aplicar
     mode, technique = ACTION_MAP[selected_flag]
-    #result(f"Acción seleccionada: {mode} -> {technique}")
-    
+
     # Imprimir banner del programa (si no se ha pedido la ayuda)
     if selected_flag not in ["-h", "--help"]:
         print(banner.BANNER)
@@ -251,6 +226,9 @@ def main():
     # ---------------------------------------------
     # Procesar puertos si aplica
     ports = None
+    # La variable minimal indica si se muestran todos los puertos en el resumen o solo los abiertos.
+    # Está configurado para que si hay más de 20 puertos a revisar, sólo se muestren los abiertos (para
+    # facilitar la vista de resultados)
     minimal = False
 
     if args.port_all:
@@ -287,11 +265,11 @@ def main():
         elif technique in ["arp_ping", "icmp_ping", "os_detection"]:  #técnicas que no necesitan definir un puerto
             ports = None
 
-    # Validación de root si es necesario
+    # Validación de root si es necesario para la ejecución
     need_root(technique)
 
     # ---------------------------------------------
-    # Procesar puertoTimeout
+    # Procesar valor de Timeout
     timeout = args.timeout if args.timeout else 0.5
 
     # ---------------------------------------------
@@ -300,7 +278,7 @@ def main():
         
     # ---------------------------------------------
     # Inicio contador de tiempo para evaluar la duración de la acción
-    start_time = datetime.now()
+    #start_time = datetime.now()
     t0 = time.perf_counter()
     exit_code = 0   # <-- Inicializa para caso “sin errores”
     module_result = None
@@ -336,9 +314,10 @@ def main():
 
         # ---------------------------------------------
         # Finalizar y mostrar duración
-        end_time = datetime.now()
-        duration = (end_time - start_time).total_seconds()
-        result(f"\nEjecución completada en {duration:.2f} segundos.")
+        #end_time = datetime.now()
+        #duration = (end_time - start_time).total_seconds()
+        #elapsed = time.perf_counter() - t0
+        result(f"\nEjecución completada en {round(time.perf_counter() - t0, 2):.2f} segundos.")
 
     except SystemExit as e:
         exit_code = int(getattr(e, "code", 1) or 1)
@@ -378,7 +357,7 @@ def main():
                     # asdict(summary) -->Convierte un dataclass (summary) en un dict de Python (recursivo).
                     # json.dumps(..., ensure_ascii=False) --> Serializa ese dict a una cadena JSON y no escapa los caracteres no ASCII.
                     line = json.dumps(asdict(summary), ensure_ascii=False)
-                    # para separar los diferentes resultados en un mismo fichero, se añade fecha y hora.
+                    # para diferenciar entre los diferentes resultados en un mismo fichero, se añade fecha y hora.
                     if args.output_file:
                         with open(args.output_file, "a", encoding="utf-8") as f:
                             f.write(f"\n### {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ###\n")

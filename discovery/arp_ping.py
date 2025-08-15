@@ -2,7 +2,7 @@
 # ARP Ping - Descubre hosts en la misma red local usando ARP
 
 from scapy.all import ARP, Ether, srp
-from colorama import Fore, Style
+from utils import Fore, Style
 
 def arp_ping(interface, target, tout):
     """

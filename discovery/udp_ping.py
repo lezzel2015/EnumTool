@@ -1,11 +1,8 @@
 # discovery/udp_ping.py
 # UDP Ping estilo Nmap: solo muestra los hosts activos que responden con ICMP Port Unreachable a cualquier puerto
 
-from colorama import Fore, Style
 from scapy.all import IP, UDP, sr1, ICMP
-
-from utils import network
-
+from utils import network, Fore, Style
 
 def udp_ping(target, ports, tout):
     """

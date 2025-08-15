@@ -2,8 +2,7 @@
 # TCP Ping - Envía SYN y detecta respuesta SYN/ACK o RST
 
 from scapy.all import IP, TCP, sr1
-from colorama import Fore, Style
-from utils import network
+from utils import network, Fore, Style
 import time
 
 def tcp_ping(target, ports, tout):

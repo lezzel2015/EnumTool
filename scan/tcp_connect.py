@@ -5,17 +5,17 @@
 # Añadido concurrencia. Valor por defecto 10 threads.
 
 from scapy.all import IP, TCP, sr1
-from colorama import Fore, Style
+# from colorama import Fore, Style
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
-from utils import network, COMMON_PORTS
+from utils import network, COMMON_PORTS, Fore, Style
 
 def scan_port(ip_addr, port, timeout):
     """
     Escanea un único puerto TCP con TCP Connect.
     Envía un paquete SYN y espera una respuesta para determinar el estado del puerto.
     """
-    result = {}
+    #result = {}
     try:
         # Construimos y enviamos paquete SYN
         syn_pkt = IP(dst=ip_addr)/TCP(dport=port, flags='S')

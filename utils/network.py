@@ -3,21 +3,7 @@
 
 import sys
 
-# --------- COLORES ---------
-try:
-    from colorama import init, Fore, Style
-    init(autoreset=True)
-except ImportError:
-    # Colorama no instalado, define colores vacíos para no romper la salida
-    class Dummy:
-        RESET_ALL = RED = YELLOW = CYAN = WHITE = ""
-    Fore = Style = Dummy()
-# ----------------------------
-# Funciones que muestran mensajes en un determinado color, dependiendo de 
-# la información que proporcionan
-
-def error(msg):
-    print(f"{Fore.RED}[!] {msg}{Style.RESET_ALL}")
+from utils import error
 
 def expand_targets(target_string):
     """

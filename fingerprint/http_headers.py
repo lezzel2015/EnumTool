@@ -5,8 +5,8 @@
 
 import socket
 import ssl
-from colorama import Fore, Style
-from utils import network, COMMON_PORTS
+#from colorama import Fore, Style
+from utils import network, COMMON_PORTS, Fore, Style
 
 def get_http_headers(ip_addr, port, timeout=3, use_https=None, insecure_tls=False):
     """

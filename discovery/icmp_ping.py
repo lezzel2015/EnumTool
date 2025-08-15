@@ -6,8 +6,7 @@ import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 #
 from scapy.all import IP, ICMP, sr1
-from colorama import Fore, Style
-from utils import network
+from utils import network, Fore, Style
 import time
 
 def icmp_ping(target, tout):
