@@ -11,7 +11,7 @@ try:
     init(autoreset=True)
 except ImportError:
     class Dummy:
-        RESET_ALL = RED = YELLOW = CYAN = WHITE = ""
+        RESET_ALL = RED = YELLOW = CYAN = WHITE = GREEN = MAGENTA = BLUE = ""
     Fore = Style = Dummy()
 
 def error(msg):

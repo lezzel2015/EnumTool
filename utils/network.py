@@ -3,7 +3,7 @@
 
 import sys
 
-from utils import error
+from .consola import error
 
 # Política global (configurada desde la CLI)
 _EXPAND_ASSUME_YES = False
