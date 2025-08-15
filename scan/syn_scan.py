@@ -88,7 +88,7 @@ def syn_scan(target, ports, timeout, threads=5, minimal_output=False, verbose=Tr
     Usa múltiples hilos (threads) para mejorar la velocidad del escaneo.
     """
     conf.verb = 0  # Suprimir salida de Scapy
-    threads = max(1, min(threads, 500))  # Limita número de hilos a un rango seguro
+    threads = max(1, min(threads, 100))  # Limita número de hilos a un rango seguro
     hosts = network.expand_targets(target)  # Expandir rangos o CIDR a lista de IPs
     results = {}
 

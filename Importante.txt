@@ -1,2 +1,5 @@
-Esta aplicación se ha implementado como Trabajo Fin de Máster (TFM) del Máster en Seguridad Ofensiva del Campus Internacional de Ciberseguridad (más info en https://www.campusciberseguridad.com/masters/master-en-seguridad-ofensiva/).
-Actualmente esta aplicación sigue en desarrollo, por lo que se garantiza los resultados mostrados. Como siempre, usa la aplicación bajo tu responsabilidad y en entornos controlados y autorizados.
+Esta aplicación se ha implementado como Trabajo Fin de Máster (TFM) del Máster en Seguridad Ofensiva del Campus Internacional de Ciberseguridad
+ (más info en https://www.campusciberseguridad.com/masters/master-en-seguridad-ofensiva/ ).
+Actualmente esta aplicación sigue en desarrollo, por lo que se garantiza los resultados mostrados. Como siempre, usa la aplicación bajo tu
+responsabilidad y siempre en entornos controlados y autorizados.
+

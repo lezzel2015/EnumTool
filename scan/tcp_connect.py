@@ -5,7 +5,6 @@
 # Añadido concurrencia. Valor por defecto 10 threads.
 
 from scapy.all import IP, TCP, sr1
-# from colorama import Fore, Style
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from utils import network, COMMON_PORTS, Fore, Style
@@ -72,12 +71,12 @@ def scan_port(ip_addr, port, timeout):
 
     return port, result
 
-def tcp_connect(target, ports, timeout, threads=10, minimal_output=False, verbose=True):
+def tcp_connect(target, ports, timeout, threads=5, minimal_output=False, verbose=True):
     """
     Ejecuta un escaneo TCP Connect concurrente sobre varios hosts y puertos.
     Utiliza hilos para acelerar el escaneo de múltiples puertos.
     """
-    threads = max(1, min(threads, 500))
+    threads = max(1, min(threads, 100))
     hosts = network.expand_targets(target)
     results = {}
 
