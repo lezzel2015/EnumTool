@@ -111,7 +111,8 @@ def expand_targets(target_string):
     if (not _EXPAND_ASSUME_YES) and len(hosts) > _EXPAND_CONFIRM_THRESHOLD:
         resp = input(f"Se van a escanear {len(hosts)} hosts. ¿Continuar? (s/n): ").strip().lower()
         if resp not in ("s", "si", "y", "yes"):
-            raise SystemExit("Cancelado por el usuario")
+            error("Cancelado por el usuario")
+            sys.exit(1)
 
         # Se devuelve la lista de hosts a escanear
     return hosts
