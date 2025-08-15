@@ -38,10 +38,8 @@ def fingerprint_packet(ip_addr, port, timeout):
         for sig in os_signatures:
             if ttl == sig["ttl"] and window in sig["window"]:
                 if sig["strict"] and all(o in opts for o in sig["opts"]):
-                    #return (sig["os"], "probable", f"(TTL={ttl}, WIN={window}, OPTS={opts}),f"({"ttl": ttl, "win": window, "opts": opts}))
                     return sig["os"], "probable", f"(TTL={ttl}, WIN={window}, OPTS={opts})", {"ttl": ttl, "win": window, "opts": opts}
                 elif not sig["strict"] and sig["opts"][0] in opts:
-                    #return sig["os"], "posible", f"(TTL={ttl}, WIN={window}, OPTS={opts})"
                     return sig["os"], "posible", f"(TTL={ttl}, WIN={window}, OPTS={opts})", {"ttl": ttl, "win": window, "opts": opts}
         # Si no hay coincidencia
         return None, None, f"(TTL={ttl}, WIN={window}, OPTS={opts})", {"ttl": ttl, "win": window, "opts": opts}
@@ -90,6 +88,22 @@ def probe_rdp_hello(ip, timeout=1.0):
         pass
     return None, None
 
+def probe_ssh_hello(ip, timeout=2.0):
+    """Lee la primera línea del banner SSH (e.g., 'SSH-2.0-OpenSSH_8.9')."""
+    try:
+        with socket.create_connection((ip, 22), timeout=timeout) as s:
+            s.settimeout(timeout)
+            data = s.recv(256)
+            if not data:
+                return None, None
+            line = data.decode("utf-8", errors="ignore").strip()
+            if line.startswith("SSH-"):
+                return "SSH", "22=SSH Service Response"
+    except Exception:
+        return None, None
+
+    return None, None
+
 def os_detection(target, ports, timeout):
     """
     Detección mejorada de sistema operativo:
@@ -105,7 +119,6 @@ def os_detection(target, ports, timeout):
     """
     if not ports:
         print(f"{Fore.YELLOW}[INFO] No se indicaron puertos: escaneando los 1000 más comunes.{Style.RESET_ALL}")
-        #from utils.top_ports import TOP_1000_TCP_PORTS
         ports = TOP_1000_TCP_PORTS
 
     print(f"{Fore.CYAN}[*] Escaneando puertos abiertos en hosts objetivo...{Style.RESET_ALL}")
@@ -125,11 +138,11 @@ def os_detection(target, ports, timeout):
         so_counter = {}
         detalles = []
         evidencias = []
-        WINDOWS_WINS = {8192, 65535, 64240, 65520, 65495}
-        LINUX_WINS = {29200, 5840, 14600, 29200, 29200}
+        windows_wins = {8192, 65535, 64240, 65520, 65495}
+        linux_wins = {29200, 5840, 14600, 29200, 29200}
 
         for port in open_ports:
-            # A. Fingerprinting activo con SYN
+            # 1. Fingerprinting activo con SYN
             so, confianza, detalle_tcp, meta = fingerprint_packet(ip_addr, port, timeout)
             linea = f"{port}="
 
@@ -140,7 +153,7 @@ def os_detection(target, ports, timeout):
             else:
                 linea += f"desconocido"
 
-            # B. Fingerprinting por banner grabber
+            # 2. Fingerprinting por banner grabber
             banner, version, status = grab_banner(ip_addr, port, timeout)
             so_name = None
             if banner and banner != "Unknown":
@@ -166,7 +179,7 @@ def os_detection(target, ports, timeout):
                 elif "linux" in banner_lower:
                     so_name = "Linux (genérico)"
 
-                # Señales fuertes "extra":
+                # 3. Señales fuertes "extra":
                 if "openssh" in banner_lower:
                     so_counter["Linux"] = so_counter.get("Linux", 0) + 2
                     evidencias.append("OpenSSH")
@@ -183,7 +196,7 @@ def os_detection(target, ports, timeout):
                 else:
                     linea += f" [{banner}]"
 
-            # Heurística TTL/ventana
+            # 4. Heurística TTL/ventana
             if meta:
                 ttl, win = meta.get("ttl"), meta.get("win")
                 if ttl is not None:
@@ -193,14 +206,15 @@ def os_detection(target, ports, timeout):
                     elif 60 <= ttl <= 70:
                         so_counter["Linux"] = so_counter.get("Linux", 0) + 1
                         evidencias.append("TTL≈64")
-                if win in WINDOWS_WINS:
+                if win in windows_wins:
                     so_counter["Windows"] = so_counter.get("Windows", 0) + 1
                     evidencias.append(f"WIN={win} típico Windows")
-                elif win in LINUX_WINS:
+                elif win in linux_wins:
                     so_counter["Linux"] = so_counter.get("Linux", 0) + 1
                     evidencias.append(f"WIN={win} típico Linux")
 
             detalles.append(linea)
+
             # Añadir resultados a "results[]" por puerto
             entry = {}
             if meta:
@@ -209,6 +223,7 @@ def os_detection(target, ports, timeout):
                 entry.update({"os_hint": so, "confidence": confianza})
             if banner and banner != "Unknown":
                 entry.update({"banner": banner[:120]})
+
             # Conservar estado/servicio del connect scan
             svc = (port_results.get(port) or {}).get("service", "Unknown")
             st = (port_results.get(port) or {}).get("status", "OPEN")
@@ -220,7 +235,7 @@ def os_detection(target, ports, timeout):
             results.setdefault(ip_addr, {})  
             results[ip_addr][port] = entry
 
-        # Probes SMB/RDP
+        # 5 "Hello" en SMB/RDP/SSH
         if 445 in open_ports:
             ver, ev = probe_smb_hello(ip_addr, timeout=timeout)
             if ver:
@@ -230,6 +245,12 @@ def os_detection(target, ports, timeout):
             ver, ev = probe_rdp_hello(ip_addr, timeout=timeout)
             if ver:
                 so_counter["Windows"] = so_counter.get("Windows", 0) + 2
+                evidencias.append(ev)
+
+        if 22 in open_ports:
+            ver, ev = probe_ssh_hello(ip_addr, timeout=timeout)
+            if ver:
+                so_counter["Linux"] = so_counter.get("Linux", 0) + 2
                 evidencias.append(ev)
         
         if not so_counter:
@@ -267,3 +288,4 @@ def os_detection(target, ports, timeout):
                     print(f"{Fore.YELLOW}    - {variante}: {porcentaje:.0f}%{Style.RESET_ALL}")
                     
     return results
+

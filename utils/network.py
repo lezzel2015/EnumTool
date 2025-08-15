@@ -5,6 +5,16 @@ import sys
 
 from utils import error
 
+# Política global (configurada desde la CLI)
+_EXPAND_ASSUME_YES = False
+_EXPAND_CONFIRM_THRESHOLD = 100
+
+def set_expand_targets_policy(assume_yes=False, confirm_threshold=100):
+    global _EXPAND_ASSUME_YES, _EXPAND_CONFIRM_THRESHOLD
+    _EXPAND_ASSUME_YES = bool(assume_yes)
+    _EXPAND_CONFIRM_THRESHOLD = int(confirm_threshold)
+    return None
+
 def expand_targets(target_string):
     """
     Procesa una cadena de targets con IPs individuales, rangos o redes CIDR.
@@ -88,7 +98,7 @@ def expand_targets(target_string):
             except ValueError:
                 error(f"IP no válida: {target}")
                 sys.exit(1)
-
+    """
     # Verificar si hay demasiadas IPs
     if len(hosts) > 100:
         print(f"\n[!] Se han generado {len(hosts)} direcciones IP a escanear.")
@@ -96,7 +106,13 @@ def expand_targets(target_string):
         if resp != 's':
             print("[-] Cancelado por el usuario.")
             sys.exit(0)
-    
-    # Se devuelve la lista de hosts a escanear
+    """
+    # Confirmación solo si NO se ha desactivado por CLI y supera umbral
+    if (not _EXPAND_ASSUME_YES) and len(hosts) > _EXPAND_CONFIRM_THRESHOLD:
+        resp = input(f"Se van a escanear {len(hosts)} hosts. ¿Continuar? (s/n): ").strip().lower()
+        if resp not in ("s", "si", "y", "yes"):
+            raise SystemExit("Cancelado por el usuario")
+
+        # Se devuelve la lista de hosts a escanear
     return hosts
 

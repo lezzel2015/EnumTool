@@ -38,7 +38,7 @@ from typing import Any, Dict, Optional
 from discovery import arp_ping, icmp_ping, tcp_ping, udp_ping
 from scan import tcp_connect, syn_scan, ack_scan
 from fingerprint import banner_grab, os_detection, http_headers
-from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS, build_module_summary, error, warning, info, result, Fore, Style
+from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS, build_module_summary, error, warning, info, result, Fore, Style, network
 
 
 # ---------------------------------------------
@@ -57,21 +57,24 @@ ACTION_MAP = {
 }
 
 # ---------------------------------------------
-def need_root(technique):
+def need_root(technique, assume_yes:bool=False):
     """
     Comprueba si la técnica seleccionada requiere permisos de root.
     Si el usuario no es root, muestra un warning y pide confirmación
     para continuar o aborta la ejecución si el usuario responde 'no'.
 
     Args:
-        technique (str): Nombre de la técnica elegida (ej: arp_ping).
+        :param technique: Nombre de la técnica elegida (ej: arp_ping).
+        :param assume_yes: Elección de autoconfirmación
     """
-    ROOT_REQUIRED_TECHNIQUES = [
+    root_required_techniques = [
         "arp_ping", "icmp_ping", "tcp_ping", "udp_ping",
         "syn_scan", "ack_scan"
     ]
 
-    if technique in ROOT_REQUIRED_TECHNIQUES:
+    if technique in root_required_techniques:
+        if assume_yes:
+            return None
         try:
             # Unix/Linux
             if hasattr(os, "geteuid") and os.geteuid() != 0:
@@ -87,6 +90,8 @@ def need_root(technique):
             if resp not in ("s", "si", "y", "yes"):
                 error("[*] Ejecución cancelada por el usuario.")
                 sys.exit(1)
+
+    return None
 
 
 # ---------------------------------------------
@@ -118,6 +123,7 @@ class Printer:
             line = f"{prefix} {message}"
 
         print(line)
+
         # Guardar también en archivo si está configurado
         if self.outfile:
             try:
@@ -186,6 +192,11 @@ def main():
     parser.add_argument("--output", dest="output_file", default=None, help="File path to dump output (append)")
     parser.add_argument("--insecure-tls", action="store_true", help="Disable TLS certificate verification for HTTPS/SMTPS banner grabbing & HTTP Headers")
 
+    # Argumentos no interactivos / confirmaciones
+    parser.add_argument("-y", "--assume-yes", action="store_true", help = "Do not ask for interactive confirmation (large targets, root).")
+    parser.add_argument("--no-confirm-targets", action="store_true", help = "Do not ask for confirmation when expanding targets when they exceed the threshold.")
+    parser.add_argument("--confirm-threshold", type=int, default=100, help = "IP threshold to ask for confirmation when expanding the target (default: 100).")
+
     # Argumentos autoexcluyentes para el análisis de cabeceras HTTP/HTTPS
     proto_group = parser.add_mutually_exclusive_group()
     proto_group.add_argument("--https", action="store_true", help="In option -H, force the use of HTTPS (TLS) for all target ports (ignore port number)")
@@ -193,6 +204,13 @@ def main():
     
 
     args = parser.parse_args()
+
+    # Configurar política de confirmación para expand_targets (definida dentro del fichero utils\network.py)
+    try:
+        network.set_expand_targets_policy(assume_yes = (getattr(args, 'assume_yes', False) or getattr(args, 'no_confirm_targets', False)),
+                                          confirm_threshold = getattr(args, 'confirm_threshold', 100))
+    except Exception:
+        pass
 
     # ---------------------------------------------
     # Determinar qué acción se ha elegido
@@ -266,7 +284,7 @@ def main():
             ports = None
 
     # Validación de root si es necesario para la ejecución
-    need_root(technique)
+    need_root(technique, assume_yes=getattr(args, 'assume_yes', False))
 
     # ---------------------------------------------
     # Procesar valor de Timeout
