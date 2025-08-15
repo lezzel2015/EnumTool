@@ -20,9 +20,9 @@ python3 EnumTool.py [acción] [opciones]
 - scan: TCP, SYN, ACK
 - fingerprint: Banner grab, OS detection, HTTP headers
 
-## 🎛️ Acciones y opciones de EnumTool
+## Acciones y opciones de EnumTool
 
-### 1. 🔹Acciones (mutuamente excluyentes)
+### 1. Acciones (mutuamente excluyentes)
 
 | Flag  | Categoría   | Técnica        | Módulo                             |
 |-------|-------------|----------------|------------------------------------|
@@ -39,7 +39,7 @@ python3 EnumTool.py [acción] [opciones]
 
 ---
 
-### 2. 🟩 Parámetros Comunes
+### 2. Parámetros Comunes
 
 | Flag                | Opciones            | Descripción                                        |
 |---------------------|---------------------|----------------------------------------------------|
@@ -58,26 +58,63 @@ python3 EnumTool.py [acción] [opciones]
 
 ---
 
-### 3. 🟨 Parámetros Especiales
+### 3. Parámetros Especiales
 
-| Flag           | Acción | Descripción                                                                     |
-|----------------|--------|---------------------------------------------------------------------------------|
-| `--http`       | -H     | Forzar HTTP (no TLS) en todos los puertos escaneados en opción                  |
-| `--https`      | -H     | Forzar HTTPS (TLS) en todos los puertos escaneados en opción                    |
-| *(none)*       | -H     | Auto detección de protocolo basado en número de puerto (80 → HTTP, 443 → HTTPS) |
-| --insecure-tls | -B     | Deshabilitar la validación TLS en opción                                        |
+| Flag            | Acción  | Descripción                                                                     |
+|-----------------|---------|---------------------------------------------------------------------------------|
+| `--http`        | -H      | Forzar HTTP (no TLS) en todos los puertos escaneados en opción                  |
+| `--https`       | -H      | Forzar HTTPS (TLS) en todos los puertos escaneados en opción                    |
+| *(none)*        | -H      | Auto detección de protocolo basado en número de puerto (80 → HTTP, 443 → HTTPS) |
+| --insecure-tls  | -B / -H | Deshabilitar la validación TLS en opción                                        |
+
+---
+
+### 4. Ejecuciones no interactivas (targets grandes y root)
+
+| Flag                       | Descripción                                                                      |
+|----------------------------|----------------------------------------------------------------------------------|
+| `-y, --assume-yes`         | Evita todas las confirmaciones interactivas (umbral de objetivos, aviso de root) |
+| `--no-confirm-targets`     | No pide confirmación al expandir objetivos grandes.                              |
+| `--confirm-threshold N`    | Umbral de IPs para pedir confirmación (por defecto 100).                         |
 
 ---
 
 ### Ejemplos de uso
 
 ```bash
-  sudo python3 EnumTool.py -dA -i eth0 -t 192.168.1.0/24
-  sudo python3 EnumTool.py -sT -t 192.168.1.10-15 -p 22,80,443
-  sudo python3 EnumTool.py -sS -t 10.0.0.5 --top 100
-  sudo python3 EnumTool.py -B -t 10.0.0.5 -p 80,443 --insecure-tls
-  sudo python3 EnumTool.py -H -t 10.0.0.5 --https
-  sudo python3 EnumTool.py -V -t 10.0.0.5 -p 80,443 --summary --format json --output resultados.log
+
+# Discovery (ARP)
+sudo python3 EnumTool.py -dA -i eth0 -t 192.168.1.0/24 --summary
+```
+```bash
+
+# Scan (TCP connect) con resumen JSON
+sudo python3 EnumTool.py -sT -t 192.168.1.10-15 -p 22,80,443 --summary --format json
+```
+```bash
+
+# SYN scan top 100
+sudo python3 EnumTool.py -sS -t 10.0.0.5 --top 100
+```
+```bash
+
+# Banner grab sin validar TLS (útil con certs self-signed)
+sudo python3 EnumTool.py -B -t 10.0.0.5 -p 80,443 --insecure-tls
+```
+```bash
+
+# HTTP headers forzando HTTPS, sin validar TLS
+sudo python3 EnumTool.py -H -t 10.0.0.5 --https --insecure-tls
+```
+```bash
+
+# OS detection con resumen JSON
+sudo python3 EnumTool.py -V -t 10.0.0.5 -p 80,443 --summary --format json --output resultados.log
+```
+```bash
+
+# Modo no interactivo (targets grandes + técnicas que requieren root)
+sudo python3 EnumTool.py -dI -t 192.168.0.0/16 -y
 ```
 
 
