@@ -1,5 +1,4 @@
 # discovery package
-# discovery/__init__.py
 # Este archivo indica que discovery es un módulo de Python
 # y permite importar sus funciones de forma centralizada.
 
