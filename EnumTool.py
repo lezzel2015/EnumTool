@@ -406,11 +406,31 @@ def main():
                                     f"filtered+no_tcp={c['filtered_or_notcp']} other={c['other']} "
                                     f"total={c['total']} | OPEN: {opened}")
                                 )
+
                         elif module_summary.get("type") == "discovery":
                             printer.emit(
                                 "info",
                                 f"  hosts activos: {module_summary.get('count', 0)} -> "
                                 f"{', '.join(module_summary.get('hosts_summary', []) or module_summary.get('hosts', [])) or '-'}")
+
+                        elif module_summary.get("type") == "fingerprint":
+                            hosts = module_summary.get("hosts", {}) or {}
+                            printer.emit("info", f"  hosts analizados: {module_summary.get('count', 0)}")
+                            # Línea por host: IP [OS/conf] -> p:desc, p:desc, ...
+                            for ip, data in hosts.items():
+                                os_part = ""
+                                if data.get("os_hint"):
+                                    if data.get("confidence") is not None:
+                                        os_part = f" [{data['os_hint']} {data['confidence']}%]"
+                                    else:
+                                        os_part = f" [{data['os_hint']}]"
+                                svcs = data.get("services", []) or []
+                                # mostrar hasta 3 servicios con descripción abreviada
+                                svc_txt = ", ".join(
+                                    f"{s.get('port')}:{(s.get('desc') or s.get('service') or '-')[:40]}"
+                                    for s in svcs[:3] ) or "-"
+                                printer.emit("info", f"    {ip}{os_part} -> {svc_txt}")
+
                         else:
                             printer.emit("info", f"  resumen módulo: {module_summary}")
 
