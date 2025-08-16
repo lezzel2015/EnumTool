@@ -200,8 +200,10 @@ def build_module_summary(technique: str, module_result: Any) -> Optional[Dict[st
 
     # 3) Fingerprint (banner_grab, http_headers, os_detection)
     if technique in ("banner_grab", "http_headers", "os_detection"):
-        if isinstance(module_result, dict):
+        if _is_scan_schema(module_result):
             return summarize_fingerprint_results(module_result)
+
+        return summarize_generic_mapping(module_result)
 
     # 4) Otros mapeos por host/puerto "genericos"
     if isinstance(module_result, dict):

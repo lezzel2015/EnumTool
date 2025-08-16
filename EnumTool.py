@@ -35,11 +35,29 @@ from dataclasses import dataclass, asdict, field   # Para estructurar el resumen
 from typing import Any, Dict, Optional
 
 # Importación desde otros módulos
+# Importación desde otros módulos
 from discovery import arp_ping, icmp_ping, tcp_ping, udp_ping
-from scan import tcp_connect, syn_scan, ack_scan
-from fingerprint import banner_grab, os_detection, http_headers
-from utils import banner, parse_ports, top_ports, PortParseError, TOP_1000_TCP_PORTS, build_module_summary, error, warning, info, result, Fore, Style, network
-
+from scan.tcp_connect import tcp_connect
+from scan.syn_scan import syn_scan
+from scan.ack_scan import ack_scan
+from fingerprint.banner_grab import banner_grab
+from fingerprint.os_detection import os_detection
+from fingerprint.http_headers import http_headers
+from utils import (
+    banner,
+    parse_ports,
+    top_ports,
+    PortParseError,
+    TOP_1000_TCP_PORTS,
+    build_module_summary,
+    error,
+    warning,
+    info,
+    result,
+    Fore,
+    Style,
+    network,
+)
 
 # ---------------------------------------------
 # Mapeo de flags cortos (mode, technique)

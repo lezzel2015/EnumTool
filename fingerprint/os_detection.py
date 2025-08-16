@@ -1,6 +1,6 @@
 # fingerprint/os_detection.py
 # Versión mejorada añadiendo banner grabbing
-from scan import tcp_connect
+from scan.tcp_connect import tcp_connect
 from fingerprint import grab_banner
 from scapy.all import IP, TCP, sr1
 import socket

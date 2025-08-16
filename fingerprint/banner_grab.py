@@ -15,7 +15,7 @@ import string
 import re
 import ssl
 
-from scan import tcp_connect                # Escaneo TCP activo reutilizable
+from scan.tcp_connect import tcp_connect                # Escaneo TCP activo reutilizable
 from utils import Fore, Style
 
 # -------------------------------------
@@ -170,13 +170,14 @@ def banner_grab(target, ports, timeout, threads=5, insecure_tls=False) :
         open_ports = sorted(p for p, info in ports_dict.items() if info.get("status") == "OPEN")
 
         if not open_ports:
-            print(f"{Fore.YELLOW}[!] No se encontraron puertos abiertos en {ip_addr}{Style.RESET_ALL}")
-            continue
+            print(f"{Fore.YELLOW}[!] No se encontraron puertos abiertos en {ip_addr}. Intentando de todas formas...{Style.RESET_ALL}")
+            open_ports = sorted(ports)
 
         # Ejecutamos tareas concurrentes por cada puerto abierto
         with ThreadPoolExecutor(max_workers=threads) as executor:
             future_to_port = {
-                executor.submit(grab_banner, ip_addr, port, timeout, insecure_tls=insecure_tls): port for port in open_ports
+                executor.submit(grab_banner, ip_addr, port, timeout, insecure_tls=insecure_tls): port
+                for port in open_ports
             }
 
             banners = {}
