@@ -24,13 +24,13 @@ from utils import Fore, Style
 def clean_banner(banner):
     """
     Elimina caracteres no imprimibles y formateo extraño.
-    - Quita saltos de línea, retorno de carro y tabs
+    - Sustituye saltos de línea, retorno de carro y tabs por espacios
     - Sustituye múltiples espacios/tabs por un único espacio
     """
-    filtered = ''.join(c for c in banner if c in string.printable and c not in ('\r', '\n', '\t'))
-    cleaned = re.sub(r'\s+', ' ', filtered).strip()
+    filtered = "".join(" " if c in "\r\n\t" else c for c in banner if c in string.printable)
+    cleaned = re.sub(r"\s+", " ", filtered).strip()
     # Inserta espacio entre tokens de distro pegados (p.ej., "7.9p1Debian" -> "7.9p1 Debian")
-    cleaned = re.sub(r'([0-9][A-Za-z]+)(Debian|Ubuntu|Alpine|CentOS|RedHat)', r'\1 \2', cleaned)
+    cleaned = re.sub(r"([0-9][A-Za-z]+)(Debian|Ubuntu|Alpine|CentOS|RedHat)", r"\1 \2", cleaned)
     return cleaned
 
 # -------------------------------------

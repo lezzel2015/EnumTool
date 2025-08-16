@@ -1,6 +1,6 @@
 # fingerprint package
 from .banner_grab import grab_banner, banner_grab, clean_banner, extract_version
-from .http_headers import http_headers
+from . import http_headers      # <- importa el módulo
 from .os_detection import os_detection
 
 __all__ = [

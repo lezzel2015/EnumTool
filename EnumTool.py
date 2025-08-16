@@ -374,7 +374,7 @@ def main():
             module_summary = build_module_summary(technique, module_result) if args.summary else None
             
             summary = RunSummary(
-                action_flag=selected_flag if 'selected_flag' in locals() else "",
+                action_flag=f"-{selected_flag}" if 'selected_flag' in locals() else "",
                 mode=mode if 'mode' in locals() else "",
                 technique=technique if 'technique' in locals() else "",
                 interface=getattr(args, "interface", None),
