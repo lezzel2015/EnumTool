@@ -1,22 +1,36 @@
 EnumTool/
 ├─ discovery/
-│  ├─ __init__.py
+│  ├─ init.py
 │  ├─ arp_ping.py
 │  ├─ icmp_ping.py
 │  ├─ tcp_ping.py
 │  └─ udp_ping.py
 ├─ fingerprint/
-│  ├─ __init__.py
+│  ├─ init.py
 │  ├─ banner_grab.py
 │  ├─ http_headers.py
 │  └─ os_detection.py
 ├─ scan/
-│  ├─ __init__.py
+│  ├─ init.py
 │  ├─ ack_scan.py
 │  ├─ syn_scan.py
 │  └─ tcp_connect.py
+├─ tests/
+│  ├─ conftest.py
+│  ├─ test_banner_grab_integration.py
+│  ├─ test_banner_utils.py
+│  ├─ test_cli_args.py
+│  ├─ test_http_headers.py
+│  ├─ test_module_summary.py
+│  ├─ test_need_root.py
+│  ├─ test_network.py
+│  ├─ test_ports.py
+│  ├─ test_printer.py
+│  ├─ test_run_summary.py
+│  ├─ test_summarize_discovery.py
+│  └─ test_top_ports.py
 ├─ utils/
-│  ├─ __init__.py
+│  ├─ init.py
 │  ├─ banner.py
 │  ├─ config.py
 │  ├─ consola.py
@@ -32,3 +46,4 @@ EnumTool/
 ├─ LICENSE
 ├─ README.md
 └─ requirements.txt
+
