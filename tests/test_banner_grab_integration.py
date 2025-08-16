@@ -5,13 +5,13 @@ import threading
 from fingerprint import banner_grab
 
 
-class TestHandler(socketserver.StreamRequestHandler):
+class BannerHandler(socketserver.StreamRequestHandler):
     def handle(self):
         self.wfile.write(b"220 TestServer 1.0\r\n")
 
 
 def test_banner_grab_integration():
-    with socketserver.TCPServer(("127.0.0.1", 0), TestHandler) as server:
+    with socketserver.TCPServer(("127.0.0.1", 0), BannerHandler) as server:
         port = server.server_address[1]
         thread = threading.Thread(target=server.serve_forever)
         thread.daemon = True
