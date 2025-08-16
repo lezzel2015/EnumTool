@@ -25,6 +25,6 @@ def test_cli_mutually_exclusive(monkeypatch):
 
 def test_cli_valid(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["EnumTool.py", "-sT", "-t", "1.1.1.1", "-p", "80"])
-    monkeypatch.setattr("scan.tcp_connect.tcp_connect", lambda *a, **k: {})
+    monkeypatch.setattr("scan.tcp_connect", lambda *a, **k: {})
     EnumTool.main()  # no excepción
 

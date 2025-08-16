@@ -280,7 +280,7 @@ def main():
         elif technique in ["http_headers"]:
             warning("No se ha indicado ningún puerto, se utilizarán por defecto 80 y 443.")
             ports = [80, 443]
-        elif technique in ["arp_ping", "icmp_ping", "os_detection"]:  #técnicas que no necesitan definir un puerto
+        elif technique in ["arp_ping", "icmp_ping", "os_detection"]:  # técnicas que no necesitan definir un puerto
             ports = None
 
     # Validación de root si es necesario para la ejecución

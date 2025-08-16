@@ -15,7 +15,7 @@ import string
 import re
 import ssl
 
-from scan import tcp_connect                # Escaneo TCP activo reutilizable
+from scan.tcp_connect import tcp_connect                # Escaneo TCP activo reutilizable
 from utils import Fore, Style
 
 # -------------------------------------
@@ -28,7 +28,10 @@ def clean_banner(banner):
     - Sustituye múltiples espacios/tabs por un único espacio
     """
     filtered = ''.join(c for c in banner if c in string.printable and c not in ('\r', '\n', '\t'))
-    return re.sub(r'\s+', ' ', filtered).strip()
+    cleaned = re.sub(r'\s+', ' ', filtered).strip()
+    # Inserta espacio entre tokens de distro pegados (p.ej., "7.9p1Debian" -> "7.9p1 Debian")
+    cleaned = re.sub(r'([0-9][A-Za-z]+)(Debian|Ubuntu|Alpine|CentOS|RedHat)', r'\1 \2', cleaned)
+    return cleaned
 
 # -------------------------------------
 # Intenta extraer la versión del banner mediante patrones
@@ -57,7 +60,7 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
                 if not data:
                     break
                 chunks.append(data)
-                # si llegó cabecera HTTP completa, paramos pronto
+                # si llegó cabecera HTTP completa, paramos
                 if b"\r\n\r\n" in b"".join(chunks):
                     break
             except socket.timeout:
@@ -102,7 +105,8 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
             return data_raw, "TLS_OK"
         except Exception:
             return "", "TLS_FAIL"
-
+    #----------------------------------------------
+    # Función principal
     try:
         # Selección de canal
         if port in (443, 993, 995):

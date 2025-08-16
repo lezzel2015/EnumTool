@@ -98,15 +98,7 @@ def expand_targets(target_string):
             except ValueError:
                 error(f"IP no válida: {target}")
                 sys.exit(1)
-    """
-    # Verificar si hay demasiadas IPs
-    if len(hosts) > 100:
-        print(f"\n[!] Se han generado {len(hosts)} direcciones IP a escanear.")
-        resp = input("¿Deseas continuar? (s/n): ").strip().lower()
-        if resp != 's':
-            print("[-] Cancelado por el usuario.")
-            sys.exit(0)
-    """
+
     # Confirmación solo si NO se ha desactivado por CLI y supera umbral
     if (not _EXPAND_ASSUME_YES) and len(hosts) > _EXPAND_CONFIRM_THRESHOLD:
         resp = input(f"Se van a escanear {len(hosts)} hosts. ¿Continuar? (s/n): ").strip().lower()
