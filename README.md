@@ -24,18 +24,18 @@ python3 EnumTool.py [acción] [opciones]
 
 ### 1. Acciones (mutuamente excluyentes)
 
-| Flag  | Categoría   | Técnica        | Módulo                             |
-|-------|-------------|----------------|------------------------------------|
-| `-dA` | Discovery   | `arp_ping`     | `discovery/arp_ping.py`            |
-| `-dI` | Discovery   | `icmp_ping`    | `discovery/icmp_ping.py`           |
-| `-dT` | Discovery   | `tcp_ping`     | `discovery/tcp_ping.py`            |
-| `-dU` | Discovery   | `udp_ping`     | `discovery/udp_ping.py`            |
-| `-sT` | Scan        | `tcp_connect`  | `scan/tcp_connect.py`              |
-| `-sS` | Scan        | `syn_scan`     | `scan/syn_scan.py`                 |
-| `-sA` | Scan        | `ack_scan`     | `scan/ack_scan.py`                 |
-| `-B`  | Fingerprint | `banner_grab`  | `fingerprint/banner_grab.py`       |
-| `-V`  | Fingerprint | `os_detection` | `fingerprint/os_detection_plus.py` |
-| `-H`  | Fingerprint | `http_headers` | `fingerprint/http_headers.py`      |
+| Flag  | Categoría   | Técnica        | Módulo                        |
+|-------|-------------|----------------|-------------------------------|
+| `-dA` | Discovery   | `arp_ping`     | `discovery/arp_ping.py`       |
+| `-dI` | Discovery   | `icmp_ping`    | `discovery/icmp_ping.py`      |
+| `-dT` | Discovery   | `tcp_ping`     | `discovery/tcp_ping.py`       |
+| `-dU` | Discovery   | `udp_ping`     | `discovery/udp_ping.py`       |
+| `-sT` | Scan        | `tcp_connect`  | `scan/tcp_connect.py`         |
+| `-sS` | Scan        | `syn_scan`     | `scan/syn_scan.py`            |
+| `-sA` | Scan        | `ack_scan`     | `scan/ack_scan.py`            |
+| `-B`  | Fingerprint | `banner_grab`  | `fingerprint/banner_grab.py`  |
+| `-V`  | Fingerprint | `os_detection` | `fingerprint/os_detection.py` |
+| `-H`  | Fingerprint | `http_headers` | `fingerprint/http_headers.py` |
 
 ---
 
@@ -117,6 +117,27 @@ sudo python3 EnumTool.py -V -t 10.0.0.5 -p 80,443 --summary --format json --outp
 sudo python3 EnumTool.py -dI -t 192.168.0.0/16 -y
 ```
 
+### 5. Tests
+
+Requisitos:
+```bash
+  pip install pytest pytest-cov
+```
+
+Ejecutar test suite:
+```bash
+  pytest -q
+```
+
+JUnit/XML (para CI):
+```bash
+  pytest --junitxml test_result.xml
+```
+
+Cobertura:
+```bash
+  pytest --cov=. --cov-report=term-missing
+```
 
 ### ⚠️ Avisos
 
