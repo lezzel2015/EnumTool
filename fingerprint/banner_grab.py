@@ -15,7 +15,7 @@ import string
 import re
 import ssl
 
-from scan.tcp_connect import tcp_connect                # Escaneo TCP activo reutilizable
+from scan import tcp_connect                # Escaneo TCP activo reutilizable
 from utils import Fore, Style
 
 # -------------------------------------

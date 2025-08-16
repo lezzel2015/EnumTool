@@ -2,7 +2,7 @@
 
 from utils.module_summary import summarize_discovery_results
 
-def test_hosts_symmary():
+def test_hosts_summary():
     data = {
         "10.0.0.1": {"method": "TCP", "ports": [80]},
         "10.0.0.2": {"method": "ICMP"},

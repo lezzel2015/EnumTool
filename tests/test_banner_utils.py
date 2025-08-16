@@ -1,6 +1,6 @@
 #tests/test_banner_utils.py
 
-from fingerprint.banner_grab import clean_banner, extract_version
+from fingerprint import clean_banner, extract_version
 
 
 def test_clean_banner():

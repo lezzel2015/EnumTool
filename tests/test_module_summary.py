@@ -1,6 +1,6 @@
 #tests/test_module_summary.py
 
-from utils.module_summary import (
+from utils import (
     summarize_scan_results,
     summarize_discovery_results,
     build_module_summary,
