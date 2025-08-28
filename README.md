@@ -51,7 +51,7 @@ python3 EnumTool.py [acción] [opciones]
 | `--profile`         | {web,windows,linux} | Perfiles de puertos predefinidos                   |
 | `--timeout`         |                     | Tiempo de espera por paquete (defecto 0.5s)        |
 | `--threads`         |                     | Hilos concurrentes (defecto 5, recomendado ≤10)    |
-| `-S`, `--sumary`    |                     | Mostrar resumen final de la ejecución              |
+| `-S`, `--summary`   |                     | Mostrar resumen final de la ejecución              |
 | `--format`          | {text,json}         | Formato del resumen (texto o json)                 |
 | `--output FICHERO`  |                     | Volcar el resumen a un archivo ("append")          |
 
