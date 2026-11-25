@@ -32,7 +32,7 @@ def tcp_ping(target, ports, tout):
                     continue
 
                 tcp_reply = resp.getlayer(TCP)
-                if tcp_reply.sport != int(port):
+                if tcp_reply.sport != int(port) or tcp_reply.dport != pkt.getlayer(TCP).sport:
                     continue
 
                 flags = int(tcp_reply.flags)
