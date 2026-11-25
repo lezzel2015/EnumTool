@@ -44,16 +44,20 @@ python3 EnumTool.py [acción] [opciones]
 | Flag                | Opciones            | Descripción                                        |
 |---------------------|---------------------|----------------------------------------------------|
 | `-i`, `--interface` |                     | Interfaz de red (obligatorio con `-dA`)            |
-| `-t`, `--target`    |                     | IP, rango o red objetivo                           |
+| `-t`, `--target`    |                     | Objetivo IPv4: IP, rango, CIDR o lista separada por comas |
 | `-p`, `--port`      |                     | Puerto/s destino (e.g. `22,80`, `20-25`)           |
 | `--port-all`        |                     | Escanear todos los puertos TCP (1-65535)           |
-| `--top N`           |                     | Escanear los N puertos TCP más frecuentes (N≤1000) |
+| `--top N`           |                     | Escanear los N puertos TCP más frecuentes (1≤N≤1000) |
 | `--profile`         | {web,windows,linux} | Perfiles de puertos predefinidos                   |
-| `--timeout`         |                     | Tiempo de espera por paquete (defecto 0.5s)        |
-| `--threads`         |                     | Hilos concurrentes (defecto 5, recomendado ≤10)    |
+| `--timeout`         |                     | Tiempo finito y mayor que 0 (defecto 0.5s)          |
+| `--threads`         |                     | Hilos concurrentes, debe ser >0 (defecto 5)        |
+| `--max-targets N`   |                     | Máximo de IPs únicas expandidas (defecto 4096)     |
+| `--confirm-threshold N` |                 | Pedir confirmación por encima de este umbral (100) |
 | `-S`, `--summary`   |                     | Mostrar resumen final de la ejecución              |
 | `--format`          | {text,json}         | Formato del resumen (texto o json)                 |
 | `--output FICHERO`  |                     | Volcar el resumen a un archivo ("append")          |
+
+Los objetivos se expanden como direcciones IPv4 únicas: las entradas repetidas se eliminan conservando el orden. El límite predeterminado es 4096 y se puede ajustar con `--max-targets`. Por encima de `--confirm-threshold` (100 por defecto), se pide confirmación, salvo que se use `-y` o `--no-confirm-targets`.
 
 
 ---
@@ -117,27 +121,24 @@ sudo python3 EnumTool.py -V -t 10.0.0.5 -p 80,443 --summary --format json --outp
 sudo python3 EnumTool.py -dI -t 192.168.0.0/16 -y
 ```
 
-### 5. Tests
+### 5. Pruebas
 
-Requisitos:
+Instalar dependencias de la aplicación y de pruebas:
 ```bash
-  pip install pytest pytest-cov
+python -m pip install -r requirements.txt
 ```
 
-Ejecutar test suite:
+Ejecutar la suite:
 ```bash
-  pytest -q
+python -m pytest -q
 ```
 
-JUnit/XML (para CI):
+Generar un informe de cobertura:
 ```bash
-  pytest --junitxml test_result.xml
+python -m pytest --cov=. --cov-report=term-missing
 ```
 
-Cobertura:
-```bash
-  pytest --cov=. --cov-report=term-missing
-```
+GitHub Actions ejecuta la suite en Python 3.10, 3.11 y 3.12.
 
 ### ⚠️ Avisos
 
