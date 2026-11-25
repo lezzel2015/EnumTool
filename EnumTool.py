@@ -29,6 +29,7 @@ import sys
 import os
 import time
 import json
+import math
 from argparse import RawTextHelpFormatter, ArgumentParser
 from datetime import datetime
 from dataclasses import dataclass, asdict, field   # Para estructurar el resumen de ejecución
@@ -224,7 +225,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.timeout <= 0:
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error("--timeout debe ser mayor que cero")
     if args.threads <= 0:
         parser.error("--threads debe ser mayor que cero")
