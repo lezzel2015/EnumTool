@@ -1,6 +1,7 @@
 # Regression tests for TCP Connect, SYN Scan, and ACK Scan classification.
 
 from importlib import import_module
+import socket
 
 from scapy.all import ICMP, IP, TCP
 
@@ -25,39 +26,52 @@ def _tcp_reply(probe, flags, source=TARGET):
 
 
 def test_tcp_connect_marks_timeout_filtered(monkeypatch):
-    monkeypatch.setattr(tcp_connect_module, "sr1", lambda *_args, **_kwargs: None)
+    def raise_timeout(*_args, **_kwargs):
+        raise socket.timeout()
+
+    monkeypatch.setattr(tcp_connect_module.socket, "create_connection", raise_timeout)
 
     _port, result = tcp_connect_module.scan_port(TARGET, PORT, 0.01)
 
     assert result["status"] == "FILTERED"
 
 
-def test_tcp_connect_completes_then_resets_after_syn_ack(monkeypatch):
-    sent = []
-    monkeypatch.setattr(tcp_connect_module, "sr1", lambda probe, **_kwargs: _tcp_reply(probe, "SA"))
-    monkeypatch.setattr(tcp_connect_module, "send", lambda packet, **_kwargs: sent.append(packet))
+def test_tcp_connect_closes_successful_connection(monkeypatch):
+    class FakeConnection:
+        closed = False
 
-    _port, result = tcp_connect_module.scan_port(TARGET, PORT, 0.01)
+        def __enter__(self):
+            return self
 
-    assert result["status"] == "OPEN"
-    assert len(sent) == 2
-    assert int(sent[0][TCP].flags) == 0x10
-    assert int(sent[1][TCP].flags) & 0x04
-    assert sent[0][TCP].seq == sent[1][TCP].seq
-    assert sent[0][TCP].ack == sent[1][TCP].ack
+        def __exit__(self, *_args):
+            self.closed = True
 
-
-def test_tcp_connect_rejects_tcp_reply_from_another_host(monkeypatch):
+    connection = FakeConnection()
     monkeypatch.setattr(
-        tcp_connect_module,
-        "sr1",
-        lambda probe, **_kwargs: _tcp_reply(probe, "SA", source="192.0.2.254"),
+        tcp_connect_module.socket,
+        "create_connection",
+        lambda *_args, **_kwargs: connection,
     )
 
     _port, result = tcp_connect_module.scan_port(TARGET, PORT, 0.01)
 
-    assert result["status"] == "UNKNOWN"
-    assert result["reason"] == "unmatched-tcp-response"
+    assert result["status"] == "OPEN"
+    assert connection.closed
+
+
+def test_tcp_connect_classifies_refused_connection_as_closed(monkeypatch):
+    def refuse_connection(*_args, **_kwargs):
+        raise ConnectionRefusedError()
+
+    monkeypatch.setattr(
+        tcp_connect_module.socket,
+        "create_connection",
+        refuse_connection,
+    )
+
+    _port, result = tcp_connect_module.scan_port(TARGET, PORT, 0.01)
+
+    assert result["status"] == "CLOSED"
 
 
 def test_syn_scan_classifies_unexpected_icmp(monkeypatch):
