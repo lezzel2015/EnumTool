@@ -1,8 +1,8 @@
 # Changelog
 
-Cambios relevantes de EnumTool. El proyecto aún no tiene etiquetas ni releases; la primera versión propuesta es **0.1.0**.
+Cambios relevantes de EnumTool. La primera versión publicada es **0.1.0**.
 
-## 0.1.0 — propuesta, pendiente de publicación
+## 0.1.0 — 2026-11-25
 
 ### Añadido
 - Expansión de objetivos IPv4 desde direcciones, rangos, CIDR y listas; elimina duplicados y aplica un límite configurable.
@@ -23,4 +23,4 @@ Cambios relevantes de EnumTool. El proyecto aún no tiene etiquetas ni releases;
 - GitHub Actions: pruebas aprobadas en Python 3.10, 3.11 y 3.12.
 - Prueba manual en laboratorio VirtualBox: ARP, ICMP, TCP abierto/cerrado, cabeceras HTTP y banner de servicio.
 
-La versión **0.1.0** es una propuesta. La fecha de publicación y la etiqueta se fijarán al aprobar la release.
+Publicado con la etiqueta `v0.1.0` el 2026-11-25.
