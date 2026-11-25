@@ -28,3 +28,25 @@ def test_cli_valid(monkeypatch):
     monkeypatch.setattr("scan.tcp_connect", lambda *a, **k: {})
     EnumTool.main()  # no excepción
 
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        ["--timeout", "0"],
+        ["--threads", "0"],
+        ["--top", "0"],
+        ["--top", "1001"],
+        ["--confirm-threshold", "-1"],
+        ["--max-targets", "0"],
+    ],
+)
+def test_cli_rejects_invalid_numeric_limits(monkeypatch, option):
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["EnumTool.py", "-sT", "-t", "127.0.0.1", *option],
+    )
+    with pytest.raises(SystemExit) as exc:
+        EnumTool.main()
+    assert exc.value.code == 2
