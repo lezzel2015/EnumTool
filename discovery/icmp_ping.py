@@ -40,6 +40,8 @@ def icmp_ping(target, tout):
             print(f"{Fore.GREEN}[+] Host {ip_addr} is on{Style.RESET_ALL}")
             results[ip_addr] = {"method": "ICMP", "rtt": rtt}
 
+    except network.TargetExpansionError:
+        raise
     except Exception as e:
         print(f"{Fore.RED}[!] Error en ICMP Ping: {e}{Style.RESET_ALL}")
 
