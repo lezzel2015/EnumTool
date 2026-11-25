@@ -28,7 +28,7 @@ def udp_ping(target, ports, tout):
                 if not resp or not resp.haslayer(IP) or resp.getlayer(IP).src != ip_addr:
                     continue
 
-                if resp.haslayer(UDP) and resp.getlayer(UDP).sport == int(port):
+                if resp.haslayer(UDP) and resp.getlayer(UDP).dport == pkt.getlayer(UDP).sport:
                     print(f"{Fore.GREEN}[+] Host {ip_addr} is on{Style.RESET_ALL}")
                     results[ip_addr] = {
                         "method": "UDP",
