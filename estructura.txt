@@ -53,6 +53,7 @@ EnumTool/
 │   ├── services.py
 │   └── top_ports.py
 ├── .gitignore
+├── CHANGELOG.md
 ├── EnumTool.py
 ├── Importante.txt
 ├── LICENSE
