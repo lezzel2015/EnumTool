@@ -32,7 +32,7 @@ def test_tcp_connect_marks_timeout_filtered(monkeypatch):
     assert result["status"] == "FILTERED"
 
 
-def test_tcp_connect_resets_after_syn_ack(monkeypatch):
+def test_tcp_connect_completes_then_resets_after_syn_ack(monkeypatch):
     sent = []
     monkeypatch.setattr(tcp_connect_module, "sr1", lambda probe, **_kwargs: _tcp_reply(probe, "SA"))
     monkeypatch.setattr(tcp_connect_module, "send", lambda packet, **_kwargs: sent.append(packet))
@@ -40,8 +40,11 @@ def test_tcp_connect_resets_after_syn_ack(monkeypatch):
     _port, result = tcp_connect_module.scan_port(TARGET, PORT, 0.01)
 
     assert result["status"] == "OPEN"
-    assert len(sent) == 1
-    assert int(sent[0][TCP].flags) & 0x04
+    assert len(sent) == 2
+    assert int(sent[0][TCP].flags) == 0x10
+    assert int(sent[1][TCP].flags) & 0x04
+    assert sent[0][TCP].seq == sent[1][TCP].seq
+    assert sent[0][TCP].ack == sent[1][TCP].ack
 
 
 def test_tcp_connect_rejects_tcp_reply_from_another_host(monkeypatch):
