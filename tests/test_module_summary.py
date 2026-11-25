@@ -64,3 +64,21 @@ def test_summarize_os_detection_preserves_confidence_and_host_evidence():
     assert host["evidence"] == ["OpenSSH"]
     assert [service["port"] for service in host["services"]] == [22]
 
+def test_os_summary_confidence_matches_global_host_hint():
+    res = {
+        "1.1.1.1": {
+            22: {"os_hint": "Linux", "confidence": "probable", "status": "OPEN"},
+            80: {"os_hint": "Windows", "confidence": "posible", "status": "OPEN"},
+            "_host_os": {
+                "best": "Windows",
+                "score": 4,
+                "evidence": ["Microsoft-IIS"],
+                "open_ports": [80],
+            },
+        }
+    }
+
+    host = build_module_summary("os_detection", res)["hosts"]["1.1.1.1"]
+
+    assert host["os_hint"] == "Windows"
+    assert host["confidence"] == "posible"
