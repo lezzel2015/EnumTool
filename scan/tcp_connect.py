@@ -1,6 +1,6 @@
 # scan/tcp_connect.py
-# SYN-based TCP port scan. Sends a reset after SYN/ACK so the handshake
-# does not leave an established connection on the remote host.
+# SYN-based TCP Connect scan. Completes the handshake and immediately resets
+# the connection so it does not remain established on the remote host.
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
@@ -32,12 +32,22 @@ def scan_port(ip_addr, port, timeout):
                 if flags & 0x04:
                     result = {"status": "CLOSED", "rtt": rtt}
                 elif flags & 0x12 == 0x12:
+                    client_port = syn_pkt.getlayer(TCP).sport
+                    ack_number = tcp_reply.seq + 1
+                    next_seq = tcp_reply.ack
+                    ack_pkt = IP(dst=ip_addr) / TCP(
+                        sport=client_port,
+                        dport=port,
+                        flags="A",
+                        seq=next_seq,
+                        ack=ack_number,
+                    )
                     rst_pkt = IP(dst=ip_addr) / TCP(
-                        sport=syn_pkt.getlayer(TCP).sport,
+                        sport=client_port,
                         dport=port,
                         flags="RA",
-                        seq=tcp_reply.ack,
-                        ack=tcp_reply.seq + 1,
+                        seq=next_seq,
+                        ack=ack_number,
                     )
                     result = {
                         "status": "OPEN",
@@ -45,6 +55,7 @@ def scan_port(ip_addr, port, timeout):
                         "rtt": rtt,
                     }
                     try:
+                        send(ack_pkt, verbose=0)
                         send(rst_pkt, verbose=0)
                     except Exception as reset_error:
                         result["reset_error"] = str(reset_error)
@@ -75,9 +86,9 @@ def scan_port(ip_addr, port, timeout):
 
 def tcp_connect(target, ports, timeout, threads=5, minimal_output=False, verbose=True):
     """
-    Ejecuta un escaneo SYN-based concurrente sobre varios hosts y puertos.
-    Tras detectar SYN/ACK, envía RST para cerrar el intento sin dejar una
-    conexión establecida.
+    Ejecuta un escaneo TCP Connect concurrente sobre varios hosts y puertos.
+    Completa el handshake y envía RST inmediatamente después para cerrar
+    cada conexión identificada como abierta.
     """
     ports = list(ports or [])
     if not ports:
