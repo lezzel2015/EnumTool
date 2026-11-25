@@ -99,7 +99,7 @@ def test_syn_scan_resets_after_syn_ack(monkeypatch):
 
 
 def test_ack_scan_accepts_rst_ack_as_unfiltered(monkeypatch):
-    monkeypatch.setattr(ack_scan_module, "network.expand_targets", lambda _target: [TARGET])
+    monkeypatch.setattr(ack_scan_module.network, "expand_targets", lambda _target: [TARGET])
     monkeypatch.setattr(ack_scan_module, "sr1", lambda probe, **_kwargs: _tcp_reply(probe, "RA"))
 
     result = ack_scan_module.ack_scan(TARGET, [PORT], timeout=0.01)
@@ -109,7 +109,7 @@ def test_ack_scan_accepts_rst_ack_as_unfiltered(monkeypatch):
 
 
 def test_ack_scan_classifies_other_icmp_as_unknown(monkeypatch):
-    monkeypatch.setattr(ack_scan_module, "network.expand_targets", lambda _target: [TARGET])
+    monkeypatch.setattr(ack_scan_module.network, "expand_targets", lambda _target: [TARGET])
     monkeypatch.setattr(
         ack_scan_module,
         "sr1",
