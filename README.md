@@ -52,7 +52,6 @@ python3 EnumTool.py [acción] [opciones]
 | `--timeout`         |                     | Tiempo finito y mayor que 0 (defecto 0.5s)          |
 | `--threads`         |                     | Hilos concurrentes, debe ser >0 (defecto 5)        |
 | `--max-targets N`   |                     | Máximo de IPs únicas expandidas (defecto 4096)     |
-| `--confirm-threshold N` |                 | Pedir confirmación por encima de este umbral (100) |
 | `-S`, `--summary`   |                     | Mostrar resumen final de la ejecución              |
 | `--format`          | {text,json}         | Formato del resumen (texto o json)                 |
 | `--output FICHERO`  |                     | Volcar el resumen a un archivo ("append")          |
@@ -69,7 +68,7 @@ Los objetivos se expanden como direcciones IPv4 únicas: las entradas repetidas 
 | `--http`        | -H      | Forzar HTTP (no TLS) en todos los puertos escaneados en opción                  |
 | `--https`       | -H      | Forzar HTTPS (TLS) en todos los puertos escaneados en opción                    |
 | *(none)*        | -H      | Auto detección de protocolo basado en número de puerto (80 → HTTP, 443 → HTTPS) |
-| --insecure-tls  | -B / -H | Deshabilitar la validación TLS en opción                                        |
+| `--insecure-tls` | -B / -H | Deshabilitar la validación TLS para esa acción                                  |
 
 ---
 
@@ -145,6 +144,6 @@ GitHub Actions ejecuta la suite en Python 3.10, 3.11 y 3.12.
 - `--interface` es **obligatorio solo para `-dA`**.
 - `--target` es obligatorio para **todas las técnicas**.
 - Los flag de acción (e.g. `-sT`, `-B`) son **mútuamente exclusivos**.
-- Para evitar fallos de Scapy al usar muchos hilos se recomienda `--threads ≤ 10`.
+- En técnicas basadas en Scapy, empieza con un valor moderado de `--threads` (por ejemplo, 10 o menos) y ajústalo según el entorno.
 - Algunas técnicas requieren privilegios de root (ARP, ICMP, UDP ping, SYN y ACK scan).
 
