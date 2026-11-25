@@ -55,6 +55,8 @@ def udp_ping(target, ports, tout):
                 }
                 break
 
+    except network.TargetExpansionError:
+        raise
     except Exception as e:
         print(f"{Fore.RED}[!] Error en UDP Ping: {e}{Style.RESET_ALL}")
 
