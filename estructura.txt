@@ -1,49 +1,61 @@
 EnumTool/
-├─ discovery/
-│  ├─ init.py
-│  ├─ arp_ping.py
-│  ├─ icmp_ping.py
-│  ├─ tcp_ping.py
-│  └─ udp_ping.py
-├─ fingerprint/
-│  ├─ init.py
-│  ├─ banner_grab.py
-│  ├─ http_headers.py
-│  └─ os_detection.py
-├─ scan/
-│  ├─ init.py
-│  ├─ ack_scan.py
-│  ├─ syn_scan.py
-│  └─ tcp_connect.py
-├─ tests/
-│  ├─ conftest.py
-│  ├─ test_banner_grab_integration.py
-│  ├─ test_banner_utils.py
-│  ├─ test_cli_args.py
-│  ├─ test_http_headers.py
-│  ├─ test_module_summary.py
-│  ├─ test_need_root.py
-│  ├─ test_network.py
-│  ├─ test_ports.py
-│  ├─ test_printer.py
-│  ├─ test_run_summary.py
-│  ├─ test_summarize_discovery.py
-│  └─ test_top_ports.py
-├─ utils/
-│  ├─ init.py
-│  ├─ banner.py
-│  ├─ config.py
-│  ├─ consola.py
-│  ├─ gen_estructura.py
-│  ├─ module_summary.py
-│  ├─ network.py
-│  ├─ ports.py
-│  ├─ services.py
-│  └─ top_ports.py
-├─ EnumTool.py
-├─ estructura.txt
-├─ Importante.txt
-├─ LICENSE
-├─ README.md
-└─ requirements.txt
-
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── Demo/
+│   ├── 01_Ayuda_y_opciones_erroneas.mkv
+│   ├── 02_Discovery.mkv
+│   ├── 03_Scan.mkv
+│   ├── 04_Fingerprint.mkv
+│   └── Readme.txt
+├── discovery/
+│   ├── __init__.py
+│   ├── arp_ping.py
+│   ├── icmp_ping.py
+│   ├── tcp_ping.py
+│   └── udp_ping.py
+├── fingerprint/
+│   ├── __init__.py
+│   ├── banner_grab.py
+│   ├── http_headers.py
+│   └── os_detection.py
+├── scan/
+│   ├── __init__.py
+│   ├── ack_scan.py
+│   ├── syn_scan.py
+│   └── tcp_connect.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_banner_grab_integration.py
+│   ├── test_banner_utils.py
+│   ├── test_cli_args.py
+│   ├── test_discovery_ping.py
+│   ├── test_fingerprint_stability.py
+│   ├── test_http_headers.py
+│   ├── test_module_summary.py
+│   ├── test_need_root.py
+│   ├── test_network.py
+│   ├── test_ports.py
+│   ├── test_printer.py
+│   ├── test_run_summary.py
+│   ├── test_scan_classification.py
+│   ├── test_summarize_discovery.py
+│   └── test_top_ports.py
+├── utils/
+│   ├── __init__.py
+│   ├── banner.py
+│   ├── config.py
+│   ├── consola.py
+│   ├── gen_estructura.py
+│   ├── module_summary.py
+│   ├── network.py
+│   ├── ports.py
+│   ├── services.py
+│   └── top_ports.py
+├── .gitignore
+├── EnumTool.py
+├── Importante.txt
+├── LICENSE
+├── README.md
+├── estructura.txt
+└── requirements.txt
