@@ -214,6 +214,7 @@ def main():
     parser.add_argument("-y", "--assume-yes", action="store_true", help = "Do not ask for interactive confirmation (large targets, root).")
     parser.add_argument("--no-confirm-targets", action="store_true", help = "Do not ask for confirmation when expanding targets when they exceed the threshold.")
     parser.add_argument("--confirm-threshold", type=int, default=100, help = "IP threshold to ask for confirmation when expanding the target (default: 100).")
+    parser.add_argument("--max-targets", type=int, default=4096, help="Maximum number of unique target IPs to expand (default: 4096).")
 
     # Argumentos autoexcluyentes para el análisis de cabeceras HTTP/HTTPS
     proto_group = parser.add_mutually_exclusive_group()
@@ -223,12 +224,23 @@ def main():
 
     args = parser.parse_args()
 
-    # Configurar política de confirmación para expand_targets (definida dentro del fichero utils\network.py)
-    try:
-        network.set_expand_targets_policy(assume_yes = (getattr(args, 'assume_yes', False) or getattr(args, 'no_confirm_targets', False)),
-                                          confirm_threshold = getattr(args, 'confirm_threshold', 100))
-    except Exception:
-        pass
+    if args.timeout <= 0:
+        parser.error("--timeout debe ser mayor que cero")
+    if args.threads <= 0:
+        parser.error("--threads debe ser mayor que cero")
+    if args.top is not None and not 1 <= args.top <= 1000:
+        parser.error("--top debe estar entre 1 y 1000")
+    if args.confirm_threshold < 0:
+        parser.error("--confirm-threshold no puede ser negativo")
+    if args.max_targets < 1:
+        parser.error("--max-targets debe ser mayor que cero")
+
+    # Configurar política de confirmación y el máximo de objetivos.
+    network.set_expand_targets_policy(
+        assume_yes=args.assume_yes or args.no_confirm_targets,
+        confirm_threshold=args.confirm_threshold,
+        max_targets=args.max_targets,
+    )
 
     # ---------------------------------------------
     # Determinar qué acción se ha elegido
@@ -365,6 +377,11 @@ def main():
         exit_code = int(getattr(e, "code", 1) or 1)
         raise
     
+    except network.TargetExpansionError as ex:
+        exit_code = 2
+        error(f"Error en objetivos: {ex}")
+        raise SystemExit(2)
+
     except Exception as ex:
         exit_code = 1
         printer.emit("warn", f"Excepción no controlada: {ex.__class__.__name__}: {ex}")
