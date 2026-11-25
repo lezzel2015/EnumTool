@@ -112,60 +112,82 @@ def summarize_discovery_results(resultado: Any) -> Dict[str, Any]:
 # ---------------------------------------------
 def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[str, Any]]]) -> Dict[str, Any]:
     """
-    Resume resultados de fingerprint (banner_grab, http_headers, os_detection):
-      - Agrega por host: os_hint/confidence (si existen), y una lista 'services'
-        con resúmenes por puerto (banner/Server/X-Powered-By/proto).
-    Devuelve:
-      {
-        "type": "fingerprint",
-        "count": N,
-        "hosts": {
-          ip: {
-            "os_hint": str|None,
-            "confidence": int|None,
-            "services": [{"port": int|str, "service": str|None, "desc": str|None}, ...]
-          } , ...
-        }
-      }
+    Resume resultados de banner_grab, http_headers y os_detection.
+    Conserva el nivel cualitativo de confianza y el score/evidencias globales
+    de OS Detection por separado.
     """
     hosts: Dict[str, Any] = {}
+    confidence_ranks = {"posible": 1, "probable": 2}
+
     for ip, ports_map in (result or {}).items():
         if not isinstance(ports_map, dict):
             continue
-        best_hint: Optional[str] = None
-        best_conf: int = -1
+
+        confidence_by_hint: Dict[str, Any] = {}
+        rank_by_hint: Dict[str, float] = {}
+        host_os = ports_map.get("_host_os")
         services: List[Dict[str, Any]] = []
-        for p, entry in ports_map.items():
-            try:
-                port = int(p)
-            except Exception:
-                port = p
-            if not isinstance(entry, dict):
+
+        for raw_port, entry in ports_map.items():
+            if raw_port == "_host_os" or not isinstance(entry, dict):
                 continue
-            # Coger el mejor "os_hint/confidence"
+
+            try:
+                port = int(raw_port)
+            except (TypeError, ValueError):
+                port = raw_port
+
             hint = entry.get("os_hint")
-            conf = entry.get("confidence")
-            if hint is not None and isinstance(conf, (int, float)) and int(conf) > best_conf:
-                best_hint = str(hint)
-                best_conf = int(conf)
-            # Añadir descripción corta
+            confidence = entry.get("confidence")
+            if hint is not None:
+                hint = str(hint)
+                if isinstance(confidence, (int, float)):
+                    rank = float(confidence)
+                else:
+                    rank = float(confidence_ranks.get(str(confidence).lower(), 0))
+                if rank > rank_by_hint.get(hint, -1.0):
+                    confidence_by_hint[hint] = confidence
+                    rank_by_hint[hint] = rank
+
             desc = entry.get("banner") or ""
             if not desc:
                 headers = entry.get("headers") or {}
                 server = headers.get("Server") or headers.get("server")
-                xpb = headers.get("X-Powered-By") or headers.get("x-powered-by")
-                bits = [b for b in [server, xpb] if b]
+                powered_by = headers.get("X-Powered-By") or headers.get("x-powered-by")
+                bits = [value for value in (server, powered_by) if value]
                 if bits:
                     desc = " | ".join(bits)
             if not desc:
                 desc = entry.get("proto") or entry.get("service") or None
-            services.append({"port": port, "service": entry.get("service"), "desc": desc})
-        services = sorted(services, key=lambda s: (isinstance(s["port"], str), s["port"]))
-        hosts[ip] = {
+
+            services.append({
+                "port": port,
+                "service": entry.get("service"),
+                "desc": desc,
+            })
+
+        score = None
+        evidence = []
+        if isinstance(host_os, dict):
+            best_hint = host_os.get("best")
+            score = host_os.get("score")
+            evidence = host_os.get("evidence") or []
+            best_confidence = confidence_by_hint.get(best_hint)
+        else:
+            best_hint = max(rank_by_hint, key=rank_by_hint.get) if rank_by_hint else None
+            best_confidence = confidence_by_hint.get(best_hint)
+
+        services.sort(key=lambda service: (isinstance(service["port"], str), service["port"]))
+        host_summary = {
             "os_hint": best_hint,
-            "confidence": (None if best_conf < 0 else best_conf),
+            "confidence": best_confidence,
             "services": services,
         }
+        if score is not None:
+            host_summary["score"] = score
+        if evidence:
+            host_summary["evidence"] = evidence
+        hosts[ip] = host_summary
 
     return {"type": "fingerprint", "count": len(hosts), "hosts": hosts}
 
@@ -190,29 +212,21 @@ def build_module_summary(technique: str, module_result: Any) -> Optional[Dict[st
     if module_result is None:
         return None
 
-    # 1) Escaneo por puertos (syn_scan, tcp_connect, ack_scan, banner_grab/http si usan puertos)
-    if _is_scan_schema(module_result):
-        return summarize_scan_results(module_result)
+    # El tipo de técnica prevalece sobre la forma de las claves por puerto:
+    # banner_grab también usa puertos numéricos, pero no es un escaneo de estados.
+    if technique in ("banner_grab", "http_headers", "os_detection"):
+        return summarize_fingerprint_results(module_result)
 
-    # 2) Discovery (arp_ping, icmp_ping, tcp_ping, udp_ping)
     if technique in ("arp_ping", "icmp_ping", "tcp_ping", "udp_ping"):
         return summarize_discovery_results(module_result)
 
-    # 3) Fingerprint (banner_grab, http_headers, os_detection)
-    if technique in ("banner_grab", "http_headers", "os_detection"):
-        if _is_scan_schema(module_result):
-            return summarize_fingerprint_results(module_result)
+    if _is_scan_schema(module_result):
+        return summarize_scan_results(module_result)
 
-        return summarize_generic_mapping(module_result)
-
-    # 4) Otros mapeos por host/puerto "genericos"
     if isinstance(module_result, dict):
         return summarize_generic_mapping(module_result)
 
-    # 5) Lista simple → discovery
     if isinstance(module_result, (list, tuple, set)):
         return summarize_discovery_results(module_result)
 
-    # Fallback mínimo
     return {"type": "raw", "repr": repr(module_result)[:800]}
-
