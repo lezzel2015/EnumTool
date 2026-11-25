@@ -1,111 +1,117 @@
 # utils/network.py
-# Implementación de funciones relacionadas con la red.
+# Funciones relacionadas con la validación y expansión de objetivos IPv4.
 
-import sys
 
-from .consola import error
-
-# Política global (configurada desde la CLI)
 _EXPAND_ASSUME_YES = False
 _EXPAND_CONFIRM_THRESHOLD = 100
+_EXPAND_MAX_TARGETS = 4096
 
-def set_expand_targets_policy(assume_yes=False, confirm_threshold=100):
-    global _EXPAND_ASSUME_YES, _EXPAND_CONFIRM_THRESHOLD
+
+class TargetExpansionError(ValueError):
+    """Error de validación, límite o confirmación al expandir objetivos."""
+
+
+def set_expand_targets_policy(assume_yes=False, confirm_threshold=100, max_targets=4096):
+    """Configura la confirmación y el máximo de IPs únicas permitido."""
+    global _EXPAND_ASSUME_YES, _EXPAND_CONFIRM_THRESHOLD, _EXPAND_MAX_TARGETS
+
+    try:
+        confirm_threshold = int(confirm_threshold)
+        max_targets = int(max_targets)
+    except (TypeError, ValueError) as exc:
+        raise TargetExpansionError("Los límites de expansión deben ser enteros.") from exc
+
+    if confirm_threshold < 0:
+        raise TargetExpansionError("confirm_threshold no puede ser negativo.")
+    if max_targets < 1:
+        raise TargetExpansionError("max_targets debe ser mayor que cero.")
+
     _EXPAND_ASSUME_YES = bool(assume_yes)
-    _EXPAND_CONFIRM_THRESHOLD = int(confirm_threshold)
-    return None
+    _EXPAND_CONFIRM_THRESHOLD = confirm_threshold
+    _EXPAND_MAX_TARGETS = max_targets
+
 
 def expand_targets(target_string):
     """
-    Procesa una cadena de targets con IPs individuales, rangos o redes CIDR.
-    Ejemplo de entrada:
-      "192.168.56.3,192.168.56.6-192.168.56.9,192.168.1.0/24"
-    Salida:
-      ['192.168.56.3', '192.168.56.6', '192.168.56.7', '192.168.56.8', '192.168.56.9', '192.168.1.0', '192.168.1.1', ...]
+    Procesa IPs individuales, rangos IPv4 o redes CIDR.
+    El resultado conserva el orden de entrada, elimina duplicados y no supera
+    el máximo configurado de direcciones únicas.
     """
     import ipaddress
-    
+
+    if not isinstance(target_string, str) or not target_string.strip():
+        raise TargetExpansionError("Debes indicar al menos un objetivo IPv4.")
+
+    targets = [part.strip() for part in target_string.split(",") if part.strip()]
     hosts = []
-    # Primero separamos por comas la entrada
-    targets = [p.strip() for p in target_string.split(',') if p.strip()]
-    # Se procesa cada parte... Si hay un guión --> es un rango de Ips, sino, es
-    # una ip aislada
+    seen = set()
+
+    def add_host(address):
+        address = str(address)
+        if address in seen:
+            return
+        if len(hosts) >= _EXPAND_MAX_TARGETS:
+            raise TargetExpansionError(
+                f"La expansión supera el límite de {_EXPAND_MAX_TARGETS} objetivos. "
+                "Ajusta --max-targets si necesitas un rango mayor."
+            )
+        seen.add(address)
+        hosts.append(address)
+
     for target in targets:
-        if '/' in target:
-            # Notación CIDR - Se valida y se expande:
+        if "/" in target:
             try:
                 net = ipaddress.IPv4Network(target, strict=False)
-                hosts_in_net = list(net.hosts())
-                # Si el rango de IP es /32 --> es una Ip única
-                if not hosts_in_net and net.prefixlen == 32:
-                    hosts.append(str(net.network_address))
-                # Si no hay ningún host en el listado... error    
-                elif not hosts_in_net:
-                    error(f"La red {target} no tiene hosts utilizables.")
-                    sys.exit(1)
-                else:
-                    for ip in hosts_in_net:
-                        hosts.append(str(ip))
-            except ValueError:
-                error(f"Red CIDR no válida: {target}")
-                sys.exit(1)
-        elif '-' in target:
+            except ValueError as exc:
+                raise TargetExpansionError(f"Red CIDR no válida: {target}") from exc
+
+            if net.num_addresses == 1:
+                add_host(net.network_address)
+            else:
+                for address in net.hosts():
+                    add_host(address)
+
+        elif "-" in target:
             try:
-                # Se acepta 192.168.1.6-12 como 192.168.1.6 - 192.168.1.12
-                start_ip_str, end_ip_str = target.split('-')
+                start_ip_str, end_ip_str = target.split("-", 1)
                 start_ip = ipaddress.IPv4Address(start_ip_str.strip())
 
-                # Si el final es un número (último octeto)
-                if '.' not in end_ip_str:
-                    # Expandir final con mismo prefijo
+                if "." not in end_ip_str:
                     last_octet = int(end_ip_str)
-                    start_octets = start_ip_str.strip().split('.')
-                    # Se verifica que la ip está bien formada (4 octetos)
-                    if len(start_octets) != 4:
-                        raise ValueError
-                    # Se guarda el valor inicial de los octetos
-                    base = list(map(int, start_octets))
-                    # Se verifica que el último octeto es correcto
-                    if not (0 <= last_octet <= 255):
-                        raise ValueError
-                    # Se verifica que el rango indicado es correcto:    
-                    if last_octet < base[3]:
-                        error(f"Rango inválido: {target} (último octeto menor que el inicial)")
-                        sys.exit(1)
+                    octets = [int(part) for part in start_ip_str.strip().split(".")]
+                    if not 0 <= last_octet <= 255:
+                        raise ValueError("último octeto fuera de rango")
+                    if last_octet < octets[3]:
+                        raise ValueError("último octeto menor que el inicial")
 
-                    for i in range(base[3], last_octet + 1):
-                        ip = f"{base[0]}.{base[1]}.{base[2]}.{i}"
-                        hosts.append(ip)
+                    start_value = int(start_ip)
+                    count = last_octet - octets[3] + 1
+                    for value in range(start_value, start_value + count):
+                        add_host(ipaddress.IPv4Address(value))
                 else:
-                    # Rango completo con IP final
                     end_ip = ipaddress.IPv4Address(end_ip_str.strip())
                     if int(end_ip) < int(start_ip):
-                        error(f"Rango inválido: {target} (IP final menor que la inicial)")
-                        sys.exit(1)
-                    current = start_ip
-                    while current <= end_ip:
-                        hosts.append(str(current))
-                        current += 1
-            except ValueError:
-                error(f"Rango de IPs no válido: {target}")
-                sys.exit(1)
+                        raise ValueError("IP final menor que la inicial")
+                    for value in range(int(start_ip), int(end_ip) + 1):
+                        add_host(ipaddress.IPv4Address(value))
+
+            except (ValueError, IndexError) as exc:
+                raise TargetExpansionError(f"Rango de IPs no válido: {target}") from exc
 
         else:
-            # IP única
             try:
-                ip = ipaddress.IPv4Address(target)
-                hosts.append(str(ip))
-            except ValueError:
-                error(f"IP no válida: {target}")
-                sys.exit(1)
+                add_host(ipaddress.IPv4Address(target))
+            except ValueError as exc:
+                raise TargetExpansionError(f"IP no válida: {target}") from exc
 
-    # Confirmación solo si NO se ha desactivado por CLI y supera umbral
-    if (not _EXPAND_ASSUME_YES) and len(hosts) > _EXPAND_CONFIRM_THRESHOLD:
-        resp = input(f"Se van a escanear {len(hosts)} hosts. ¿Continuar? (s/n): ").strip().lower()
-        if resp not in ("s", "si", "y", "yes"):
-            error("Cancelado por el usuario")
-            sys.exit(1)
+    if not hosts:
+        raise TargetExpansionError("No se encontraron objetivos IPv4 válidos.")
 
-        # Se devuelve la lista de hosts a escanear
+    if not _EXPAND_ASSUME_YES and len(hosts) > _EXPAND_CONFIRM_THRESHOLD:
+        response = input(
+            f"Se van a escanear {len(hosts)} hosts. ¿Continuar? (s/n): "
+        ).strip().lower()
+        if response not in ("s", "si", "y", "yes"):
+            raise TargetExpansionError("Expansión cancelada por el usuario.")
+
     return hosts
-
