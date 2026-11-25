@@ -123,9 +123,8 @@ def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[s
         if not isinstance(ports_map, dict):
             continue
 
-        best_hint: Optional[str] = None
-        best_confidence: Any = None
-        best_rank = -1.0
+        confidence_by_hint: Dict[str, Any] = {}
+        rank_by_hint: Dict[str, float] = {}
         host_os = ports_map.get("_host_os")
         services: List[Dict[str, Any]] = []
 
@@ -141,14 +140,14 @@ def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[s
             hint = entry.get("os_hint")
             confidence = entry.get("confidence")
             if hint is not None:
+                hint = str(hint)
                 if isinstance(confidence, (int, float)):
                     rank = float(confidence)
                 else:
                     rank = float(confidence_ranks.get(str(confidence).lower(), 0))
-                if rank > best_rank:
-                    best_hint = str(hint)
-                    best_confidence = confidence
-                    best_rank = rank
+                if rank > rank_by_hint.get(hint, -1.0):
+                    confidence_by_hint[hint] = confidence
+                    rank_by_hint[hint] = rank
 
             desc = entry.get("banner") or ""
             if not desc:
@@ -170,9 +169,13 @@ def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[s
         score = None
         evidence = []
         if isinstance(host_os, dict):
-            best_hint = host_os.get("best") or best_hint
+            best_hint = host_os.get("best")
             score = host_os.get("score")
             evidence = host_os.get("evidence") or []
+            best_confidence = confidence_by_hint.get(best_hint)
+        else:
+            best_hint = max(rank_by_hint, key=rank_by_hint.get) if rank_by_hint else None
+            best_confidence = confidence_by_hint.get(best_hint)
 
         services.sort(key=lambda service: (isinstance(service["port"], str), service["port"]))
         host_summary = {
