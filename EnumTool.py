@@ -346,7 +346,7 @@ def main():
             elif technique == "os_detection":
                 module_result = os_detection(args.target, ports, args.timeout)
             elif technique == "http_headers":
-                module_result = http_headers(args.target, ports, args.timeout, insecure_tls=args.insecure_tls)
+                module_result = http_headers(\n                    args.target,\n                    ports,\n                    args.timeout,\n                    use_https=True if args.https else False if args.http else None,\n                    insecure_tls=args.insecure_tls,\n                )
 
         # ---------------------------------------------
         # Finalizar y mostrar duración
