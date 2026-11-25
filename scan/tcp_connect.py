@@ -1,6 +1,6 @@
 # scan/tcp_connect.py
-# SYN-based TCP Connect scan. Completes the handshake and immediately resets
-# the connection so it does not remain established on the remote host.
+# TCP Connect scan using standard sockets. Successful connections are closed
+# by the socket context manager after the connect result is recorded.
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
@@ -40,8 +40,7 @@ def scan_port(ip_addr, port, timeout):
 def tcp_connect(target, ports, timeout, threads=5, minimal_output=False, verbose=True):
     """
     Ejecuta un escaneo TCP Connect concurrente sobre varios hosts y puertos.
-    Completa el handshake y envía RST inmediatamente después para cerrar
-    cada conexión identificada como abierta.
+    Usa sockets del sistema y cierra cada conexión abierta al terminar el intento.
     """
     ports = list(ports or [])
     if not ports:
