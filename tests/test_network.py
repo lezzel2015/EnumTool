@@ -39,10 +39,18 @@ def test_expand_targets_deduplicates_preserving_order():
     ]
 
 
-def test_expand_targets_enforces_maximum():
+@pytest.mark.parametrize(
+    "targets",
+    [
+        "192.168.0.1-3",
+        "192.168.0.0/29",
+        "192.168.0.1,192.168.0.2,192.168.0.3",
+    ],
+)
+def test_expand_targets_enforces_maximum(targets):
     network.set_expand_targets_policy(assume_yes=True, max_targets=2)
     with pytest.raises(network.TargetExpansionError, match="límite"):
-        network.expand_targets("192.168.0.1-3")
+        network.expand_targets(targets)
 
 
 def test_expand_targets_declined_confirmation(monkeypatch):
