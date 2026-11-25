@@ -95,12 +95,16 @@ def expand_targets(target_string):
                     for value in range(int(start_ip), int(end_ip) + 1):
                         add_host(ipaddress.IPv4Address(value))
 
+            except TargetExpansionError:
+                raise
             except (ValueError, IndexError) as exc:
                 raise TargetExpansionError(f"Rango de IPs no válido: {target}") from exc
 
         else:
             try:
                 add_host(ipaddress.IPv4Address(target))
+            except TargetExpansionError:
+                raise
             except ValueError as exc:
                 raise TargetExpansionError(f"IP no válida: {target}") from exc
 
