@@ -33,7 +33,14 @@ class HttpVirtualHostHandler(socketserver.StreamRequestHandler):
     def handle(self):
         self.server.received_host = None
         self.rfile.readline()
-        self.server.received_host = self.rfile.readline().decode().strip()
+        self.server.received_headers = []
+        while True:
+            line = self.rfile.readline().decode().strip()
+            if not line:
+                break
+            self.server.received_headers.append(line)
+            if line.lower().startswith("host:"):
+                self.server.received_host = line
         self.wfile.write(
             b"HTTP/1.1 200 OK\r\nServer: nginx\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
         )
@@ -54,6 +61,7 @@ def test_banner_grab_probes_http_virtual_host_on_nonstandard_port():
 
     entry = result["127.0.0.1"][port]
     assert server.received_host == "Host: geo.example.test"
+    assert "Accept: */*" in server.received_headers
     assert entry["detected_service"] == "http"
     assert entry["product"] == "nginx"
 

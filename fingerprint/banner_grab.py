@@ -59,7 +59,8 @@ def grab_banner(ip, port, timeout, insecure_tls=False, http_host=None, use_https
             if http_host:
                 request = (
                     f"GET / HTTP/1.1\r\nHost: {http_host}\r\n"
-                    "User-Agent: EnumTool-Banner/1.0\r\nConnection: close\r\n\r\n"
+                    "User-Agent: EnumTool-HTTPHeaders/1.0\r\n"
+                    "Accept: */*\r\nConnection: close\r\n\r\n"
                 ).encode()
                 sock.sendall(request)
                 return _recv_all(sock, tries=3), "OK"
@@ -83,7 +84,8 @@ def grab_banner(ip, port, timeout, insecure_tls=False, http_host=None, use_https
                     if http_host:
                         request = (
                             f"GET / HTTP/1.1\r\nHost: {http_host}\r\n"
-                            "User-Agent: EnumTool-Banner/1.0\r\nConnection: close\r\n\r\n"
+                            "User-Agent: EnumTool-HTTPHeaders/1.0\r\n"
+                            "Accept: */*\r\nConnection: close\r\n\r\n"
                         ).encode()
                         ssock.sendall(request)
                         return _recv_all(ssock, tries=3), "TLS_OK"
