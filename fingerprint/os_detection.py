@@ -138,6 +138,7 @@ def os_detection(target, ports, timeout):
         so_counter = {}
         detalles = []
         evidencias = []
+        evidence_sources = set()
         windows_wins = {8192, 65535, 64240, 65520, 65495}
         linux_wins = {29200, 5840, 14600, 29200, 29200}
 
@@ -149,6 +150,7 @@ def os_detection(target, ports, timeout):
             if so:
                 score = 3 if confianza == "probable" else 2
                 so_counter[so] = so_counter.get(so, 0) + score
+                evidence_sources.add("tcp_stack_fingerprint")
                 linea += f"{so}({confianza})"
             else:
                 linea += f"desconocido"
@@ -183,21 +185,25 @@ def os_detection(target, ports, timeout):
                 if "openssh" in banner_lower:
                     so_counter["Linux"] = so_counter.get("Linux", 0) + 2
                     evidencias.append("OpenSSH")
+                    evidence_sources.add("service_banner")
 
                 if "microsoft-iis" in banner_lower:
                     so_counter["Windows"] = so_counter.get("Windows", 0) + 2
                     evidencias.append("Microsoft-IIS")
+                    evidence_sources.add("service_banner")
 
                 if so_name:
                     base_so = "Windows" if "windows" in so_name.lower() else "Linux"
                     banner_score = 2 if any(x in so_name.lower() for x in ["ubuntu", "kali", "windows server"]) else 1
                     so_counter[base_so] = so_counter.get(base_so, 0) + banner_score
                     linea += f" [Banner: {so_name}]"
+                    evidence_sources.add("service_banner")
                 else:
                     linea += f" [{banner}]"
 
             # 4. Heurística TTL/ventana
             if meta:
+                evidence_sources.add("tcp_stack_fingerprint")
                 ttl, win = meta.get("ttl"), meta.get("win")
                 if ttl is not None:
                     if 120 <= ttl <= 132:
@@ -241,17 +247,20 @@ def os_detection(target, ports, timeout):
             if ver:
                 so_counter["Windows"] = so_counter.get("Windows", 0) + (3 if ver != "SMBv1" else 2)
                 evidencias.append(ev)
+                evidence_sources.add("protocol_probe")
         if 3389 in open_ports:
             ver, ev = probe_rdp_hello(ip_addr, timeout=timeout)
             if ver:
                 so_counter["Windows"] = so_counter.get("Windows", 0) + 2
                 evidencias.append(ev)
+                evidence_sources.add("protocol_probe")
 
         if 22 in open_ports:
             ver, ev = probe_ssh_hello(ip_addr, timeout=timeout)
             if ver:
                 so_counter["Linux"] = so_counter.get("Linux", 0) + 2
                 evidencias.append(ev)
+                evidence_sources.add("service_banner")
         
         if not so_counter:
             print(f"{Fore.YELLOW}[{ip_addr}] No se ha podido determinar el sistema operativo en ningún puerto abierto.{Style.RESET_ALL}")
@@ -262,13 +271,25 @@ def os_detection(target, ports, timeout):
             for d in detalles:
                 print(f"   - {d}")
 
-            print(f"{Fore.CYAN}\n[{ip_addr}] => Muy probable {best_so} (score={total}){Style.RESET_ALL}")
+            confidence = "moderada" if "tcp_stack_fingerprint" in evidence_sources or "protocol_probe" in evidence_sources else "baja"
+            print(
+                f"{Fore.CYAN}\n[{ip_addr}] => Indicios de {best_so} "
+                f"(confianza {confidence}; score orientativo={total}, no es una probabilidad)"
+                f"{Style.RESET_ALL}"
+            )
             if evidencias:
                 ev_txt = ", ".join(sorted(set(evidencias)))[:50]
                 print(f"{Fore.WHITE}  Evidencia: {ev_txt}{Style.RESET_ALL}")
 
             # Resumen por host (clave no numérica para no colisionar con puertos)
-            results[ip_addr]["_host_os"] = {"best": best_so, "score": total, "evidence": sorted(set(evidencias))[:50], "open_ports": open_ports}
+            results[ip_addr]["_host_os"] = {
+                "best": best_so,
+                "score": total,
+                "confidence": confidence,
+                "evidence_sources": sorted(evidence_sources),
+                "evidence": sorted(set(evidencias))[:50],
+                "open_ports": open_ports,
+            }
 
             # C. Cálculo del desglose por variantes detectadas por banner
             variant_counter = {}
@@ -285,7 +306,11 @@ def os_detection(target, ports, timeout):
                 print(f"{Fore.YELLOW}  Análisis por banner:{Style.RESET_ALL}")
                 for variante, count in sorted(variant_counter.items(), key=lambda x: x[1], reverse=True):
                     porcentaje = (count / total_variantes) * 100
-                    print(f"{Fore.YELLOW}    - {variante}: {porcentaje:.0f}%{Style.RESET_ALL}")
+                    print(
+                        f"{Fore.YELLOW}    - {variante}: {count}/{total_variantes} banners "
+                        f"(indicio del servicio, no confirmación del SO){Style.RESET_ALL}"
+                    )
                     
     return results
+
 

@@ -210,6 +210,7 @@ def main():
     parser.add_argument("--format", choices=["text", "json"], default="text", help="Final summary output format: 'text' for short or 'json' for extended")
     parser.add_argument("--output", dest="output_file", default=None, help="File path to dump output (append)")
     parser.add_argument("--insecure-tls", action="store_true", help="Disable TLS certificate verification for HTTPS/SMTPS banner grabbing & HTTP Headers")
+    parser.add_argument("--http-host", metavar="HOST", help="Host header and TLS SNI name for HTTP probing with -B or -H")
 
     # Argumentos no interactivos / confirmaciones
     parser.add_argument("-y", "--assume-yes", action="store_true", help = "Do not ask for interactive confirmation (large targets, root).")
@@ -235,6 +236,10 @@ def main():
         parser.error("--confirm-threshold no puede ser negativo")
     if args.max_targets < 1:
         parser.error("--max-targets debe ser mayor que cero")
+    if args.http_host and not (args.H or args.B):
+        parser.error("--http-host solo se puede usar con -B o -H")
+    if args.http_host and any(char in args.http_host for char in "\r\n\t /\\"):
+        parser.error("--http-host debe ser un nombre de host sin espacios ni rutas")
 
     # Configurar política de confirmación y el máximo de objetivos.
     network.set_expand_targets_policy(
@@ -355,7 +360,15 @@ def main():
 
         elif mode == "fingerprint":
             if technique == "banner_grab":
-                module_result = banner_grab(args.target, ports, args.timeout, threads=args.threads, insecure_tls=args.insecure_tls)
+                module_result = banner_grab(
+                    args.target,
+                    ports,
+                    args.timeout,
+                    threads=args.threads,
+                    insecure_tls=args.insecure_tls,
+                    **({"http_host": args.http_host} if args.http_host else {}),
+                    **({"use_https": True} if args.https else {"use_https": False} if args.http else {}),
+                )
             elif technique == "os_detection":
                 module_result = os_detection(args.target, ports, args.timeout)
             elif technique == "http_headers":
@@ -365,6 +378,7 @@ def main():
                     args.timeout,
                     use_https=True if args.https else False if args.http else None,
                     insecure_tls=args.insecure_tls,
+                    **({"host_header": args.http_host} if args.http_host else {}),
                 )
 
         # ---------------------------------------------
@@ -445,7 +459,10 @@ def main():
                                 printer.emit(
                                     "info",
                                     (f"  {ip} -> open={c['open']} closed={c['closed']} "
-                                    f"filtered+no_tcp={c['filtered_or_notcp']} other={c['other']} "
+                                    f"filtered={c.get('filtered', 0)} no_response={c.get('no_response', 0)} "
+                                    f"unfiltered={c.get('unfiltered', 0)} "
+                                    f"no_tcp={c.get('no_tcp', 0)} "
+                                    f"unknown={c.get('unknown', 0)} errors={c.get('errors', 0)} "
                                     f"total={c['total']} | OPEN: {opened}")
                                 )
 
@@ -483,3 +500,4 @@ def main():
 # ---------------------------------------------
 if __name__ == "__main__":
     main()
+
