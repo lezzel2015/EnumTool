@@ -11,6 +11,7 @@ Cambios relevantes de EnumTool. La primera versión publicada es **0.1.0**.
 - La detección de sistema operativo identifica la fuente de sus indicios y evita presentar el score o un banner como probabilidad concluyente.
 - Los resúmenes de escaneo separan estados filtrados, no respuesta TCP, no filtrados, desconocidos y errores.
 - Los timeouts conservan el estado `FILTERED` para mantener la clasificación compatible, pero indican explícitamente que no hubo respuesta.
+- HTTP Headers muestra y conserva la línea de estado HTTP para facilitar la comparación con Banner Grab y otras herramientas.
 
 ## 0.1.0 — 2026-11-25
 

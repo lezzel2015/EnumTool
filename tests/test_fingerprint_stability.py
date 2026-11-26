@@ -143,6 +143,32 @@ def test_http_probe_rejects_non_http_server_response():
     assert headers is None
 
 
+class HTTPNotFoundHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.request.recv(4096)
+        self.request.sendall(
+            b"HTTP/1.1 404 Not Found\r\nServer: nginx\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        )
+
+
+def test_http_headers_preserves_response_status_line():
+    with socketserver.TCPServer(("127.0.0.1", 0), HTTPNotFoundHandler) as server:
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        result = http_module.http_headers(
+            "127.0.0.1", [port], timeout=1, use_https=False
+        )
+
+        server.shutdown()
+        thread.join()
+
+    entry = result["127.0.0.1"][port]
+    assert entry["status"] == "OPEN"
+    assert entry["http_status"] == "HTTP/1.1 404 Not Found"
+
+
 def test_http_headers_forwards_forced_https(monkeypatch):
     target = "192.0.2.5"
     calls = []

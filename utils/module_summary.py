@@ -170,6 +170,8 @@ def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[s
                 server = headers.get("Server") or headers.get("server")
                 powered_by = headers.get("X-Powered-By") or headers.get("x-powered-by")
                 bits = [value for value in (server, powered_by) if value]
+                if entry.get("http_status"):
+                    bits.insert(0, entry["http_status"])
                 if bits:
                     desc = " | ".join(bits)
             if not desc:

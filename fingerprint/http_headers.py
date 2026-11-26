@@ -7,6 +7,10 @@ import ssl
 from utils import network, COMMON_PORTS, Fore, Style
 
 
+class HTTPHeaders(dict):
+    """HTTP headers mapping that also retains the response status line."""
+
+
 def get_http_headers(
     ip_addr, port, timeout=3, use_https=None, insecure_tls=False, host_header=None
 ):
@@ -15,7 +19,7 @@ def get_http_headers(
     Devuelve un diccionario (posiblemente vacío) si la conexión termina sin
     excepción, o None si falla la conexión, TLS o la lectura.
     """
-    headers = {}
+    headers = HTTPHeaders()
     virtual_host = (host_header or ip_addr).strip()
     try:
         req = (
@@ -69,6 +73,7 @@ def get_http_headers(
             # A TCP response is not enough to classify the service as HTTP
             # (for example, an SSH banner received on port 22).
             return None
+        headers.status_line = status_line
         header_lines = text.split("\r\n\r\n")[0].split("\r\n")[1:]
         for line in header_lines:
             if ": " in line:
@@ -110,7 +115,10 @@ def http_headers(
             if host_header:
                 request_options["host_header"] = host_header
             headers = get_http_headers(ip_addr, port, **request_options)
-            if headers:
+            if headers is not None:
+                status_line = getattr(headers, "status_line", None)
+                if status_line:
+                    print(f"    {status_line}")
                 for key, value in headers.items():
                     if key.lower() in ("server", "x-powered-by"):
                         print(f"    {Fore.GREEN}{key}: {value}{Style.RESET_ALL}")
@@ -123,6 +131,7 @@ def http_headers(
                 )
 
             detected_service = proto.lower() if headers is not None else None
+            status_line = getattr(headers, "status_line", None)
             server = next(
                 (value for key, value in (headers or {}).items() if key.lower() == "server"),
                 None,
@@ -141,6 +150,7 @@ def http_headers(
                 "service": registered_service,
                 "detected_service": detected_service,
                 "product": server,
+                "http_status": status_line,
                 "proto": proto,
                 "headers": headers or {},
                 "status": "OPEN" if headers is not None else "UNKNOWN",
