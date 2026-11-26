@@ -64,6 +64,11 @@ def get_http_headers(
                     response.extend(data)
 
         text = bytes(response).decode(errors="replace")
+        status_line = text.split("\r\n", 1)[0]
+        if not status_line.startswith("HTTP/"):
+            # A TCP response is not enough to classify the service as HTTP
+            # (for example, an SSH banner received on port 22).
+            return None
         header_lines = text.split("\r\n\r\n")[0].split("\r\n")[1:]
         for line in header_lines:
             if ": " in line:

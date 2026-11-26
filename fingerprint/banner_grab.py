@@ -50,6 +50,12 @@ def grab_banner(ip, port, timeout, insecure_tls=False, http_host=None, use_https
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(timeout)
             sock.connect((ip, port))
+            data = _recv_all(sock, tries=1)
+            if data:
+                # Keep services that speak first (such as SSH) as banners;
+                # don't send them an HTTP request just because --http-host
+                # was provided for other ports in the same scan.
+                return data, "OK"
             if http_host:
                 request = (
                     f"GET / HTTP/1.1\r\nHost: {http_host}\r\n"
@@ -57,7 +63,6 @@ def grab_banner(ip, port, timeout, insecure_tls=False, http_host=None, use_https
                 ).encode()
                 sock.sendall(request)
                 return _recv_all(sock, tries=3), "OK"
-            data = _recv_all(sock, tries=1)
             if not data:
                 payload = PAYLOADS.get(port, b"\r\n")
                 try:

@@ -1,7 +1,9 @@
 # Regression tests for fingerprinting behavior and CLI protocol flags.
 
 import importlib
+import socketserver
 import sys
+import threading
 
 import pytest
 from scapy.all import ICMP, IP
@@ -108,6 +110,39 @@ def test_http_connection_with_no_headers_is_still_open(monkeypatch):
     assert result[target][80]["headers"] == {}
 
 
+def test_http_headers_does_not_classify_ssh_banner_as_http(monkeypatch):
+    target = "192.0.2.5"
+    monkeypatch.setattr(http_module.network, "expand_targets", lambda _target: [target])
+    monkeypatch.setattr(http_module, "get_http_headers", lambda *_args, **_kwargs: None)
+
+    result = http_module.http_headers(target, [22], timeout=0.01, use_https=False)
+
+    assert result[target][22]["status"] == "UNKNOWN"
+    assert result[target][22]["detected_service"] is None
+
+
+class SSHBannerHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        self.request.recv(4096)
+        self.request.sendall(b"SSH-2.0-OpenSSH_10.0\r\n")
+
+
+def test_http_probe_rejects_non_http_server_response():
+    with socketserver.TCPServer(("127.0.0.1", 0), SSHBannerHandler) as server:
+        port = server.server_address[1]
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        headers = http_module.get_http_headers(
+            "127.0.0.1", port, timeout=1, use_https=False
+        )
+
+        server.shutdown()
+        thread.join()
+
+    assert headers is None
+
+
 def test_http_headers_forwards_forced_https(monkeypatch):
     target = "192.0.2.5"
     calls = []
@@ -142,3 +177,4 @@ def test_cli_forwards_http_protocol_flag(monkeypatch, flag, expected):
     EnumTool.main()
 
     assert captured["use_https"] is expected
+
