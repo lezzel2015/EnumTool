@@ -17,7 +17,7 @@ def scan_syn_port(ip_addr, port, timeout):
         rtt = time.time() - start_time
 
         if resp is None:
-            result = {"status": "FILTERED", "rtt": None}
+            result = {"status": "FILTERED", "reason": "no-response", "rtt": None}
         elif resp.haslayer(TCP) and resp.haslayer(IP):
             tcp_reply = resp.getlayer(TCP)
             if (
@@ -111,10 +111,19 @@ def syn_scan(target, ports, timeout, threads=5, minimal_output=False, verbose=Tr
             if verbose:
                 count_open = sum(1 for _, item in completed if item.get("status") == "OPEN")
                 count_closed = sum(1 for _, item in completed if item.get("status") == "CLOSED")
+                count_filtered = sum(1 for _, item in completed if item.get("status") == "FILTERED")
+                count_no_response = sum(
+                    1 for _, item in completed
+                    if item.get("reason") in ("timeout-no-response", "no-response")
+                )
+                count_no_tcp = sum(1 for _, item in completed if item.get("status") == "NO_TCP")
+                count_unknown = sum(1 for _, item in completed if item.get("status") == "UNKNOWN")
+                count_errors = sum(1 for _, item in completed if item.get("status") == "ERROR")
                 print(
                     f"\n\n{Fore.CYAN}De {len(completed)} puertos escaneados, "
-                    f"{count_open} están abiertos, {count_closed} cerrados y "
-                    f"{len(completed) - count_closed - count_open} filtrados/desconocidos"
+                    f"{count_open} abiertos, {count_closed} cerrados, {count_filtered} filtrados "
+                    f"(de ellos {count_no_response} sin respuesta), "
+                    f"{count_no_tcp} sin respuesta TCP, {count_unknown} desconocidos y {count_errors} errores"
                     f"{Style.RESET_ALL}"
                 )
 
@@ -132,7 +141,9 @@ def syn_scan(target, ports, timeout, threads=5, minimal_output=False, verbose=Tr
                             rtt_text = f"{rtt:.3f}s" if rtt is not None else "n/a"
                             print(f"  {Fore.RED}[CLOSED]  {ip_addr}:{port}  RTT={rtt_text}{Style.RESET_ALL}")
                         elif status == "FILTERED":
-                            print(f"  {Fore.YELLOW}[FILTERED] {ip_addr}:{port}{Style.RESET_ALL}")
+                            reason = item.get("reason")
+                            detail = " (sin respuesta)" if reason == "no-response" else ""
+                            print(f"  {Fore.YELLOW}[FILTERED]{detail} {ip_addr}:{port}{Style.RESET_ALL}")
                         elif status == "NO_TCP":
                             print(f"  {Fore.YELLOW}[NO TCP] {ip_addr}:{port}{Style.RESET_ALL}")
                         elif status == "UNKNOWN":
@@ -144,3 +155,4 @@ def syn_scan(target, ports, timeout, threads=5, minimal_output=False, verbose=Tr
                     print(f"\nListado de puertos abiertos: {','.join(str(p) for p in open_ports_list)}")
 
     return results
+

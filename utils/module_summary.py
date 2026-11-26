@@ -32,7 +32,7 @@ def summarize_scan_results(results_dict: Dict[str, Dict[Union[int, str], Dict[st
     hosts_summary = {}
     open_flat = []
     for ip, ports_map in results_dict.items():
-        c_open = c_closed = c_filtered = c_other = 0
+        c_open = c_closed = c_filtered = c_no_response = c_no_tcp = c_unfiltered = c_unknown = c_errors = 0
         open_ports = []
         for p, r in ports_map.items():
             try:
@@ -46,18 +46,33 @@ def summarize_scan_results(results_dict: Dict[str, Dict[Union[int, str], Dict[st
                 open_flat.append((ip, port, (r or {}).get("service", "Unknown"), (r or {}).get("rtt")))
             elif st == "CLOSED":
                 c_closed += 1
-            elif st in ("FILTERED", "NO_TCP"):
+            elif st == "FILTERED":
                 c_filtered += 1
+                if (r or {}).get("reason") in ("timeout-no-response", "no-response"):
+                    c_no_response += 1
+            elif st == "NO_TCP":
+                c_no_tcp += 1
+            elif st == "UNFILTERED":
+                c_unfiltered += 1
+            elif st == "ERROR":
+                c_errors += 1
             else:
-                c_other += 1
+                c_unknown += 1
         hosts_summary[ip] = {
             "open": sorted(open_ports, key=lambda x: (isinstance(x, str), x)),
             "counts": {
                 "open": c_open,
                 "closed": c_closed,
-                "filtered_or_notcp": c_filtered,
-                "other": c_other,
-                "total": c_open + c_closed + c_filtered + c_other
+                "filtered": c_filtered,
+                "no_response": c_no_response,
+                "no_tcp": c_no_tcp,
+                "unfiltered": c_unfiltered,
+                "unknown": c_unknown,
+                "errors": c_errors,
+                # Retain aggregate fields for consumers of the prior JSON schema.
+                "filtered_or_notcp": c_filtered + c_no_tcp,
+                "other": c_unknown + c_errors,
+                "total": c_open + c_closed + c_filtered + c_no_tcp + c_unfiltered + c_unknown + c_errors
             }
         }
     return {"type": "scan", "hosts": hosts_summary, "open_flat": open_flat}
@@ -162,16 +177,22 @@ def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[s
 
             services.append({
                 "port": port,
-                "service": entry.get("service"),
+                "service": entry.get("detected_service") or entry.get("service"),
+                "registered_service": entry.get("service"),
+                "product": entry.get("product"),
                 "desc": desc,
             })
 
         score = None
         evidence = []
+        evidence_sources = []
+        host_confidence = None
         if isinstance(host_os, dict):
             best_hint = host_os.get("best")
             score = host_os.get("score")
             evidence = host_os.get("evidence") or []
+            evidence_sources = host_os.get("evidence_sources") or []
+            host_confidence = host_os.get("confidence")
             best_confidence = confidence_by_hint.get(best_hint)
         else:
             best_hint = max(rank_by_hint, key=rank_by_hint.get) if rank_by_hint else None
@@ -185,6 +206,10 @@ def summarize_fingerprint_results(result: Dict[str, Dict[Union[int, str], Dict[s
         }
         if score is not None:
             host_summary["score"] = score
+        if isinstance(host_os, dict) and host_confidence:
+            host_summary["confidence"] = host_confidence
+        if evidence_sources:
+            host_summary["evidence_sources"] = evidence_sources
         if evidence:
             host_summary["evidence"] = evidence
         hosts[ip] = host_summary
@@ -230,3 +255,4 @@ def build_module_summary(technique: str, module_result: Any) -> Optional[Dict[st
         return summarize_discovery_results(module_result)
 
     return {"type": "raw", "repr": repr(module_result)[:800]}
+

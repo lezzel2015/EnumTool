@@ -27,7 +27,7 @@ def extract_version(banner):
     return None, None, None
 
 
-def grab_banner(ip, port, timeout, insecure_tls=False):
+def grab_banner(ip, port, timeout, insecure_tls=False, http_host=None, use_https=None):
     """Devuelve (banner, version_string|None, transport_status)."""
     def _recv_all(sock, tries=3):
         sock.settimeout(timeout)
@@ -50,6 +50,13 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(timeout)
             sock.connect((ip, port))
+            if http_host:
+                request = (
+                    f"GET / HTTP/1.1\r\nHost: {http_host}\r\n"
+                    "User-Agent: EnumTool-Banner/1.0\r\nConnection: close\r\n\r\n"
+                ).encode()
+                sock.sendall(request)
+                return _recv_all(sock, tries=3), "OK"
             data = _recv_all(sock, tries=1)
             if not data:
                 payload = PAYLOADS.get(port, b"\r\n")
@@ -67,7 +74,14 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
             ctx.verify_mode = ssl.CERT_NONE
         try:
             with socket.create_connection((ip, port), timeout=timeout) as sock:
-                with ctx.wrap_socket(sock, server_hostname=ip) as ssock:
+                with ctx.wrap_socket(sock, server_hostname=http_host or ip) as ssock:
+                    if http_host:
+                        request = (
+                            f"GET / HTTP/1.1\r\nHost: {http_host}\r\n"
+                            "User-Agent: EnumTool-Banner/1.0\r\nConnection: close\r\n\r\n"
+                        ).encode()
+                        ssock.sendall(request)
+                        return _recv_all(ssock, tries=3), "TLS_OK"
                     data_raw = _recv_all(ssock, tries=2)
                     if not data_raw:
                         payload = PAYLOADS.get(
@@ -84,7 +98,8 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
             return "", "TLS_FAIL"
 
     try:
-        if port in (443, 993, 995):
+        tls = use_https if use_https is not None else port in (443, 993, 995)
+        if tls:
             raw, status = _tcp_tls()
             if not raw and status == "TLS_FAIL":
                 raw, status = _tcp_plain()
@@ -92,7 +107,7 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
             raw, status = _tcp_plain()
 
         banner = clean_banner(raw)
-        if port in (80, 443, 8080):
+        if port in (80, 443, 8080) or http_host:
             lines = raw.splitlines()
             headers = [
                 line.strip()
@@ -111,7 +126,7 @@ def grab_banner(ip, port, timeout, insecure_tls=False):
         return "Unknown", None, "ERROR"
 
 
-def banner_grab(target, ports, timeout, threads=5, insecure_tls=False):
+def banner_grab(target, ports, timeout, threads=5, insecure_tls=False, http_host=None, use_https=None):
     """
     Escanea los puertos indicados y obtiene banners únicamente de los que
     TCP Connect clasifica como abiertos.
@@ -150,6 +165,8 @@ def banner_grab(target, ports, timeout, threads=5, insecure_tls=False):
                     port,
                     timeout,
                     insecure_tls=insecure_tls,
+                    http_host=http_host,
+                    use_https=use_https,
                 ): port
                 for port in open_ports
             }
@@ -162,6 +179,15 @@ def banner_grab(target, ports, timeout, threads=5, insecure_tls=False):
                     "banner": banner,
                     "version": version,
                     "service": COMMON_PORTS.get(port, "Unknown"),
+                    "detected_service": (
+                        "https" if status == "TLS_OK" and banner.startswith("HTTP/")
+                        else "http" if banner.startswith("HTTP/")
+                        else None
+                    ),
+                    "product": next(
+                        (line.split(":", 1)[1].strip() for line in banner.split(" | ") if line.lower().startswith("server:")),
+                        None,
+                    ),
                     "status": status,
                 }
 
@@ -169,9 +195,18 @@ def banner_grab(target, ports, timeout, threads=5, insecure_tls=False):
                 entry = banners[port]
                 results[ip_addr][port] = entry
                 version_str = f" | Version: {entry['version']}" if entry["version"] else ""
+                detected = entry.get("detected_service")
+                service_label = entry["service"]
+                if detected:
+                    service_label = detected.upper()
+                    if entry.get("product"):
+                        service_label += f" ({entry['product']})"
+                    if entry["service"].lower() not in ("http", "https", "unknown"):
+                        service_label += f"; registrado como {entry['service']}"
                 print(
                     f"  {Fore.GREEN}[BANNER] {ip_addr}:{port} - [{entry['status']}] "
-                    f"- ({entry['service']}) -> {entry['banner']}{version_str}{Style.RESET_ALL}"
+                    f"- ({service_label}) -> {entry['banner']}{version_str}{Style.RESET_ALL}"
                 )
 
     return results
+

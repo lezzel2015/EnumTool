@@ -2,6 +2,16 @@
 
 Cambios relevantes de EnumTool. La primera versión publicada es **0.1.0**.
 
+## Próxima versión — en preparación
+
+### Mejorado
+- Las pruebas HTTP permiten definir `Host` y SNI con `--http-host`, también en puertos no estándar.
+- Banner Grab puede enviar una petición HTTP explícita a un puerto abierto cuando se indica `--http-host`.
+- Los resultados distinguen el protocolo/producto detectado del nombre asignado al puerto en la tabla local.
+- La detección de sistema operativo identifica la fuente de sus indicios y evita presentar el score o un banner como probabilidad concluyente.
+- Los resúmenes de escaneo separan estados filtrados, no respuesta TCP, no filtrados, desconocidos y errores.
+- Los timeouts conservan el estado `FILTERED` para mantener la clasificación compatible, pero indican explícitamente que no hubo respuesta.
+
 ## 0.1.0 — 2026-11-25
 
 ### Añadido
@@ -24,3 +34,4 @@ Cambios relevantes de EnumTool. La primera versión publicada es **0.1.0**.
 - Prueba manual en laboratorio VirtualBox: ARP, ICMP, TCP abierto/cerrado, cabeceras HTTP y banner de servicio.
 
 Publicado con la etiqueta `v0.1.0` el 2026-11-25.
+

@@ -58,6 +58,7 @@ python3 EnumTool.py [acción] [opciones]
 | `-S`, `--summary`   |                     | Mostrar resumen final de la ejecución              |
 | `--format`          | {text,json}         | Formato del resumen (texto o json)                 |
 | `--output FICHERO`  |                     | Volcar el resumen a un archivo ("append")          |
+| `--http-host HOST`  | `-B` / `-H`         | Enviar ese nombre en `Host` y usarlo como SNI TLS al probar un virtual host |
 
 Los objetivos se expanden como direcciones IPv4 únicas: las entradas repetidas se eliminan conservando el orden. El límite predeterminado es 4096 y se puede ajustar con `--max-targets`. Por encima de `--confirm-threshold` (100 por defecto), se pide confirmación, salvo que se use `-y` o `--no-confirm-targets`.
 
@@ -68,8 +69,9 @@ Los objetivos se expanden como direcciones IPv4 únicas: las entradas repetidas 
 
 | Flag            | Acción  | Descripción                                                                     |
 |-----------------|---------|---------------------------------------------------------------------------------|
-| `--http`        | -H      | Forzar HTTP (no TLS) en todos los puertos escaneados en opción                  |
-| `--https`       | -H      | Forzar HTTPS (TLS) en todos los puertos escaneados en opción                    |
+| `--http`        | -B / -H | Forzar HTTP (no TLS) en todos los puertos de la acción                            |
+| `--https`       | -B / -H | Forzar HTTPS (TLS) en todos los puertos de la acción                              |
+| `--http-host HOST` | -B / -H | Enviar un `Host` personalizado y usarlo como SNI en conexiones TLS            |
 | *(none)*        | -H      | Auto detección de protocolo basado en número de puerto (80 → HTTP, 443 → HTTPS) |
 | `--insecure-tls` | -B / -H | Deshabilitar la validación TLS para esa acción                                  |
 
@@ -114,6 +116,16 @@ sudo python3 EnumTool.py -H -t 10.0.0.5 --https --insecure-tls
 ```
 ```bash
 
+# Consultar un virtual host HTTP en un puerto no estándar
+python3 EnumTool.py -H -t 10.0.0.5 -p 3000 --http --http-host geo.example.htb
+```
+```bash
+
+# Banner grab con petición HTTP explícita a un puerto no estándar
+python3 EnumTool.py -B -t 10.0.0.5 -p 3000 --http-host geo.example.htb
+```
+```bash
+
 # OS detection con resumen JSON
 sudo python3 EnumTool.py -V -t 10.0.0.5 -p 80,443 --summary --format json --output resultados.log
 ```
@@ -149,4 +161,6 @@ GitHub Actions ejecuta la suite en Python 3.10, 3.11 y 3.12.
 - Los flag de acción (e.g. `-sT`, `-B`) son **mútuamente exclusivos**.
 - En técnicas basadas en Scapy, empieza con un valor moderado de `--threads` (por ejemplo, 10 o menos) y ajústalo según el entorno.
 - Algunas técnicas requieren privilegios de root (ARP, ICMP, UDP ping, SYN y ACK scan).
+- La detección de SO es orientativa: banners describen servicios y una capa expuesta puede diferir del sistema que hay detrás. El score no representa una probabilidad estadística.
+
 
