@@ -4,7 +4,7 @@ Herramienta de enumeración y escaneo para redes internas orientada a labores de
 Permite descubrir hosts, escanear puertos y realizar fingerprinting de servicios mediante
 módulos independientes.
 
-La versión publicada es **0.1.0**. Consulta el
+La versión publicada es **0.2.0**. Consulta el
 [historial de cambios](CHANGELOG.md).
 
 ## Instalación
